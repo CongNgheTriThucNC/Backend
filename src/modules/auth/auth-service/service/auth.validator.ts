@@ -15,7 +15,7 @@ export const loginDtoValidator = createInboundValidatorByJoi(
 
 export const registerDtoValidator = createInboundValidatorByJoi(
     Joi.object({
-        name: Joi.string(),
+        username: Joi.string(),
         email: Joi.string().email(),
         password: Joi.string()
             .regex(EIGHT_CHAR_CONTAINS_ONE_LETTER_AND_ONE_NUMBER_REGEX)

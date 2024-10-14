@@ -32,7 +32,7 @@ class AuthenticationService {
         return this.userIdentityService.sign(user._id);
     }
 
-    async register({ name, email, password }) {
+    async register({ username, email, password }) {
         const user = await UserModel.findOne({ email }).lean();
 
         if (user) {
@@ -42,7 +42,7 @@ class AuthenticationService {
         const hashedPassword = await this.hashService.hash(password);
 
         const newUser = await UserModel.create({
-            name,
+            username,
             email,
             password: hashedPassword,
             isActive: true,
