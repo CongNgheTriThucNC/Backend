@@ -8,6 +8,7 @@ import {
     loginDtoValidator,
     authenticationService,
     userIdentityService,
+    identityGuard,
 } from './auth-service/service';
 
 const MODULE_NAME = 'Auth';
@@ -50,7 +51,7 @@ export const createAuthModule = createModuleFactory({
             properties: {
                 email: PropertyFactory.createProperty({ type: 'string' }),
                 password: PropertyFactory.createProperty({ type: 'string' }),
-                name: PropertyFactory.createProperty({ type: 'string' }),
+                username: PropertyFactory.createProperty({ type: 'string' }),
             },
         });
         swaggerBuilder.addRoute({
@@ -64,7 +65,7 @@ export const createAuthModule = createModuleFactory({
             registerDtoValidator,
             createHandler(async (req, res) => {
                 const registerDto = {
-                    name: req.body.name,
+                    username: req.body.username,
                     email: req.body.email,
                     password: req.body.password,
                 };
@@ -83,6 +84,7 @@ export const createAuthModule = createModuleFactory({
         });
         router.get(
             '/me',
+            identityGuard,
             createHandler(async (req, res) => {
                 const userId = userIdentityService.getUserIdContext(req);
                 const user = await authenticationService.getMe(userId);

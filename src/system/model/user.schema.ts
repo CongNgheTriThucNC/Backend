@@ -1,29 +1,27 @@
-import { model, Model, Schema, Document } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 
 export interface IUser extends Document {
-    _id: string;
-    email: string;
-    password: string;
-    name: string;
-    isActive?: boolean;
-    createdAt?: Date;
-    updatedAt?: Date;
+  username: string;
+  email: string;
+  password: string;
+  role: 'Employer' | 'JobSeeker' | 'Admin';
+  profilePicture?: string;
+  bio?: string;
+  locationId: Schema.Types.ObjectId;
 }
 
-const IUserSchema = new Schema<IUser>(
-    {
-        email: {
-            type: String,
-            required: true,
-            lowercase: true,
-            index: true,
-            unique: true,
-        },
-        name: { type: String, required: true },
-        password: { type: String, required: true },
-        isActive: { type: Boolean, default: true },
-    },
-    { collection: 'user', timestamps: true },
-);
+const UserSchema = new Schema<IUser>({
+  username: { type: String, required: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
+  password: { type: String, required: true },
+  role: { 
+    type: String, 
+    enum: ['Employer', 'JobSeeker', 'Admin'], 
+    default: 'JobSeeker' 
+  },
+  profilePicture: { type: String },
+  bio: { type: String },
+  locationId: { type: Schema.Types.ObjectId, ref: 'Location' }, // Foreign key to Location
+}, { timestamps: true });
 
-export const UserModel: Model<IUser> = model<IUser>('user', IUserSchema);
+export const UserModel = model<IUser>('User', UserSchema);
