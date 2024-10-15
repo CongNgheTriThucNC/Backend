@@ -1,5 +1,6 @@
-import { model, Model, Schema, Document } from 'mongoose';
-
+import { Schema, model, Document } from 'mongoose';
+import paginate from 'mongoose-paginate-v2';
+import MongooseDelete, { SoftDeleteModel } from 'mongoose-delete';
 export interface IJob extends Document {
     title: string;
     description: string;
@@ -20,6 +21,8 @@ export interface IJob extends Document {
     salary: { type: Number, required: true },
     status: { type: String, enum: ['Active', 'Closed'], required: true },
   }, { timestamps: true });
+  JobSchema.plugin(MongooseDelete, { deletedAt: true, overrideMethods: true });
+  JobSchema.plugin(paginate);
   
-  export const JobModel = model<IJob>('Job', JobSchema);
+  export const JobModel: SoftDeleteModel<IJob> = model<IJob>('Job', JobSchema);
   

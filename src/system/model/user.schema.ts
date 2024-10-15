@@ -1,4 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
+import paginate from 'mongoose-paginate-v2';
+import MongooseDelete, { SoftDeleteModel } from 'mongoose-delete';
 
 export interface IUser extends Document {
   username: string;
@@ -23,5 +25,7 @@ const UserSchema = new Schema<IUser>({
   bio: { type: String },
   locationId: { type: Schema.Types.ObjectId, ref: 'Location' }, // Foreign key to Location
 }, { timestamps: true });
+UserSchema.plugin(MongooseDelete, { deletedAt: true, overrideMethods: true });
+UserSchema.plugin(paginate);
 
-export const UserModel = model<IUser>('User', UserSchema);
+export const UserModel: SoftDeleteModel<IUser> = model<IUser>('User', UserSchema);
