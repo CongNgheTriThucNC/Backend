@@ -5,6 +5,7 @@ import { createUserModule } from './user/user.controller';
 import { createEmployerModule } from './employer/employer.controller';
 import { createJobModule } from './job/job.controller';
 import { createJobRequirementModule } from './jobRequirement/job-requirement.controller';
+import { createJobApplicationModule } from './jobApplication/jobApplication.controller';
 export const createRootModule = createModuleFactory({
     path: '/api',
     name: 'Root',
@@ -15,5 +16,6 @@ export const createRootModule = createModuleFactory({
         createEmployerModule(router);
         createJobModule(router);
         createJobRequirementModule(router);
+        createJobApplicationModule(router);
     },
 });
