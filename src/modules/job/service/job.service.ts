@@ -1,7 +1,7 @@
 // src/modules/job/job.service.ts
 
 import { omit } from 'lodash';
-import { JobNotFoundException } from './exceptions/job.exceptions'; 
+import { JobNotFoundException } from './exceptions/job.exceptions';
 import { JobModel, IJob } from '../../../system/model';
 
 class JobService {
@@ -42,7 +42,7 @@ class JobService {
         const updatedJob = await JobModel.findByIdAndUpdate(
             jobId,
             { $set: updateDto },
-            { new: true, runValidators: true }
+            { new: true, runValidators: true },
         ).lean();
 
         if (!updatedJob) {

@@ -29,7 +29,11 @@ const updateJobSchema = Joi.object({
 });
 
 // Middleware to validate the data for updating a job
-export const updateJobDtoValidator = (req: Request, res: Response, next: NextFunction) => {
+export const updateJobDtoValidator = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
     const { error } = updateJobSchema.validate(req.body, { abortEarly: false });
 
     if (error) {

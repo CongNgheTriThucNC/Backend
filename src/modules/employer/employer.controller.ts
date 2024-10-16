@@ -68,7 +68,9 @@ export const createEmployerModule = createModuleFactory({
         router.get(
             '/',
             createHandler(async (req, res) => {
-                const employers = await employerService.getAllEmployers(req.query);
+                const employers = await employerService.getAllEmployers(
+                    req.query,
+                );
                 return HttpResponseBuilder.buildOK(res, employers);
             }),
         );
@@ -92,7 +94,8 @@ export const createEmployerModule = createModuleFactory({
             '/:id',
             createHandler(async (req, res) => {
                 const employerId = req.params.id;
-                const employer = await employerService.getEmployerById(employerId);
+                const employer =
+                    await employerService.getEmployerById(employerId);
                 return HttpResponseBuilder.buildOK(res, employer);
             }),
         );
@@ -115,7 +118,8 @@ export const createEmployerModule = createModuleFactory({
                     website: req.body.website,
                 };
 
-                const newEmployer = await employerService.createEmployer(createDto);
+                const newEmployer =
+                    await employerService.createEmployer(createDto);
                 return HttpResponseBuilder.buildCreated(res, newEmployer);
             }),
         );
@@ -148,7 +152,10 @@ export const createEmployerModule = createModuleFactory({
                     website: req.body.website,
                 };
 
-                const updatedEmployer = await employerService.updateEmployer(employerId, updateDto);
+                const updatedEmployer = await employerService.updateEmployer(
+                    employerId,
+                    updateDto,
+                );
                 return HttpResponseBuilder.buildOK(res, updatedEmployer);
             }),
         );

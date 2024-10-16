@@ -31,7 +31,9 @@ class UserService {
 
     // Lấy thông tin người dùng theo ID
     async getUserById(userId: string) {
-        const user = await UserModel.findById(userId).select('-password').lean();
+        const user = await UserModel.findById(userId)
+            .select('-password')
+            .lean();
 
         if (!user) {
             throw new UserNotFoundException();
@@ -44,7 +46,10 @@ class UserService {
     async updateUser(userId: string, updateDto: Partial<IUser>) {
         // Nếu email được cập nhật, kiểm tra xem email đã được sử dụng chưa
         if (updateDto.email) {
-            const existingUser = await UserModel.findOne({ email: updateDto.email, _id: { $ne: userId } }).lean();
+            const existingUser = await UserModel.findOne({
+                email: updateDto.email,
+                _id: { $ne: userId },
+            }).lean();
             if (existingUser) {
                 throw new EmailAlreadyInUseException();
             }
@@ -53,7 +58,7 @@ class UserService {
         const updatedUser = await UserModel.findByIdAndUpdate(
             userId,
             { $set: updateDto },
-            { new: true, runValidators: true, select: '-password' }
+            { new: true, runValidators: true, select: '-password' },
         ).lean();
 
         if (!updatedUser) {

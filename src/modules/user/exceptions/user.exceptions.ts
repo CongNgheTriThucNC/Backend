@@ -7,10 +7,9 @@ export class UserNotFoundException extends ErrorException {
     }
 }
 
-
 export class EmailAlreadyInUseException extends ErrorException {
     constructor() {
         super('Email is already in use');
-        this.status = 409; 
+        this.status = 409;
     }
 }

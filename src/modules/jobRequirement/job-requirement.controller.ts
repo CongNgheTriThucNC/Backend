@@ -4,49 +4,45 @@ import { createModuleFactory } from '../../system/factories/module.factory';
 import { createHandler } from '../../system/factories';
 import { HttpResponseBuilder } from '../../system/builders/http-response.builder';
 import {
-    createJobDtoValidator,
-    updateJobDtoValidator,
-    jobService,
+    createJobRequirementDtoValidator,
+    updateJobRequirementDtoValidator,
+    jobRequirementService,
 } from './service';
 
-const MODULE_NAME = 'Job';
+const MODULE_NAME = 'JobRequirement';
 
-export const createJobModule = createModuleFactory({
-    path: '/jobs',
+export const createJobRequirementModule = createModuleFactory({
+    path: '/job-requirements',
     name: MODULE_NAME,
     bundler: router => {
         swaggerBuilder.addTag(MODULE_NAME);
 
-        // Define Job DTO model
-        const JOB_DTO_NAME = 'JobDto';
+        // Define Job Requirement DTO model
+        const JOB_REQUIREMENT_DTO_NAME = 'JobRequirementDto';
         swaggerBuilder.addModel({
-            name: JOB_DTO_NAME,
+            name: JOB_REQUIREMENT_DTO_NAME,
             properties: {
-                title: PropertyFactory.createProperty({ type: 'string' }),
-                description: PropertyFactory.createProperty({ type: 'string' }),
-                locationIds: PropertyFactory.createProperty({
-                    type: 'array',
-                    model: 'ObjectId',
-                }),
-                employerId: PropertyFactory.createProperty({
+                jobId: PropertyFactory.createProperty({
                     type: 'string',
                     format: 'ObjectId',
                 }),
-                jobTypeId: PropertyFactory.createProperty({
+                requirementDescription: PropertyFactory.createProperty({
                     type: 'string',
-                    format: 'ObjectId',
                 }),
-                salary: PropertyFactory.createProperty({ type: 'number' }),
-                status: PropertyFactory.createProperty({
-                    type: 'string',
-                    enum: ['Active', 'Closed'],
+                requirementType: PropertyFactory.createProperty({
+                    type: 'enum',
+                    model: {
+                        Skill: 'Skill',
+                        Education: 'Education',
+                        Experience: '  ',
+                    },
                 }),
             },
         });
 
-        // Define GET /jobs route (get all jobs)
+        // Define GET /job-requirements route (get all job requirements)
         swaggerBuilder.addRoute({
-            route: '/jobs',
+            route: '/job-requirements',
             tags: [MODULE_NAME],
             method: 'get',
             params: [
@@ -71,26 +67,22 @@ export const createJobModule = createModuleFactory({
                     description: 'Search query',
                     required: false,
                 }),
-                PropertyFactory.createParam({
-                    name: 'sort',
-                    paramsIn: 'query',
-                    type: 'string?',
-                    description: 'Sort query',
-                    required: false,
-                }),
             ],
         });
         router.get(
             '/',
             createHandler(async (req, res) => {
-                const jobs = await jobService.getAllJobs(req.query);
-                return HttpResponseBuilder.buildOK(res, jobs);
+                const jobRequirements =
+                    await jobRequirementService.getAllJobRequirements(
+                        req.query,
+                    );
+                return HttpResponseBuilder.buildOK(res, jobRequirements);
             }),
         );
 
-        // Define GET /jobs/:id route (get job by ID)
+        // Define GET /job-requirements/:id route (get job requirement by ID)
         swaggerBuilder.addRoute({
-            route: '/jobs/{id}',
+            route: '/job-requirements/{id}',
             tags: [MODULE_NAME],
             method: 'get',
             params: [
@@ -98,7 +90,7 @@ export const createJobModule = createModuleFactory({
                     name: 'id',
                     paramsIn: 'path',
                     type: 'string',
-                    description: 'Job ID',
+                    description: 'Job Requirement ID',
                     required: true,
                 }),
             ],
@@ -106,42 +98,42 @@ export const createJobModule = createModuleFactory({
         router.get(
             '/:id',
             createHandler(async (req, res) => {
-                const jobId = req.params.id;
-                const job = await jobService.getJobById(jobId);
-                return HttpResponseBuilder.buildOK(res, job);
+                const jobRequirementId = req.params.id;
+                const jobRequirement =
+                    await jobRequirementService.getJobRequirementById(
+                        jobRequirementId,
+                    );
+                return HttpResponseBuilder.buildOK(res, jobRequirement);
             }),
         );
 
-        // Define POST /jobs route (create a new job)
+        // Define POST /job-requirements route (create a new job requirement)
         swaggerBuilder.addRoute({
-            route: '/jobs',
-            body: JOB_DTO_NAME,
+            route: '/job-requirements',
+            body: JOB_REQUIREMENT_DTO_NAME,
             tags: [MODULE_NAME],
             method: 'post',
         });
         router.post(
             '/',
-            createJobDtoValidator,
+            createJobRequirementDtoValidator,
             createHandler(async (req, res) => {
                 const createDto = {
-                    title: req.body.title,
-                    description: req.body.description,
-                    locationIds: req.body.locationIds,
-                    employerId: req.body.employerId,
-                    jobTypeId: req.body.jobTypeId,
-                    salary: req.body.salary,
-                    status: req.body.status,
+                    jobId: req.body.jobId,
+                    requirementDescription: req.body.requirementDescription,
+                    requirementType: req.body.requirementType,
                 };
 
-                const newJob = await jobService.createJob(createDto);
-                return HttpResponseBuilder.buildCreated(res, newJob);
+                const newJobRequirement =
+                    await jobRequirementService.createJobRequirement(createDto);
+                return HttpResponseBuilder.buildCreated(res, newJobRequirement);
             }),
         );
 
-        // Define PATCH /jobs/:id route (update job by ID)
+        // Define PATCH /job-requirements/:id route (update job requirement by ID)
         swaggerBuilder.addRoute({
-            route: '/jobs/{id}',
-            body: JOB_DTO_NAME,
+            route: '/job-requirements/{id}',
+            body: JOB_REQUIREMENT_DTO_NAME,
             tags: [MODULE_NAME],
             method: 'patch',
             params: [
@@ -149,34 +141,34 @@ export const createJobModule = createModuleFactory({
                     name: 'id',
                     paramsIn: 'path',
                     type: 'string',
-                    description: 'Job ID',
+                    description: 'Job Requirement ID',
                     required: true,
                 }),
             ],
         });
         router.patch(
             '/:id',
-            updateJobDtoValidator,
+            updateJobRequirementDtoValidator,
             createHandler(async (req, res) => {
-                const jobId = req.params.id;
+                const jobRequirementId = req.params.id;
                 const updateDto = {
-                    title: req.body.title,
-                    description: req.body.description,
-                    locationId: req.body.locationId,
-                    employerId: req.body.employerId,
-                    jobTypeId: req.body.jobTypeId,
-                    salary: req.body.salary,
-                    status: req.body.status,
+                    jobId: req.body.jobId,
+                    requirementDescription: req.body.requirementDescription,
+                    requirementType: req.body.requirementType,
                 };
 
-                const updatedJob = await jobService.updateJob(jobId, updateDto);
-                return HttpResponseBuilder.buildOK(res, updatedJob);
+                const updatedJobRequirement =
+                    await jobRequirementService.updateJobRequirement(
+                        jobRequirementId,
+                        updateDto,
+                    );
+                return HttpResponseBuilder.buildOK(res, updatedJobRequirement);
             }),
         );
 
-        // Define DELETE /jobs/:id route (delete job by ID)
+        // Define DELETE /job-requirements/:id route (delete job requirement by ID)
         swaggerBuilder.addRoute({
-            route: '/jobs/{id}',
+            route: '/job-requirements/{id}',
             tags: [MODULE_NAME],
             method: 'delete',
             params: [
@@ -184,7 +176,7 @@ export const createJobModule = createModuleFactory({
                     name: 'id',
                     paramsIn: 'path',
                     type: 'string',
-                    description: 'Job ID',
+                    description: 'Job Requirement ID',
                     required: true,
                 }),
             ],
@@ -192,8 +184,10 @@ export const createJobModule = createModuleFactory({
         router.delete(
             '/:id',
             createHandler(async (req, res) => {
-                const jobId = req.params.id;
-                await jobService.deleteJob(jobId);
+                const jobRequirementId = req.params.id;
+                await jobRequirementService.deleteJobRequirement(
+                    jobRequirementId,
+                );
                 return HttpResponseBuilder.buildNoContent(res);
             }),
         );
