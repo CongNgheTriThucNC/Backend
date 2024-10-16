@@ -1,5 +1,11 @@
 // src/modules/job/dto/job.dto.ts
-import { IsString, IsNotEmpty, IsNumber, IsEnum, IsOptional } from 'class-validator';
+import {
+    IsString,
+    IsNotEmpty,
+    IsNumber,
+    IsEnum,
+    IsOptional,
+} from 'class-validator';
 
 export class CreateJobDto {
     @IsString()

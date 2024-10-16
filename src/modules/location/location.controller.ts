@@ -56,7 +56,8 @@ export const createLocationModule = createModuleFactory({
                     type: req.body.type,
                 };
 
-                const newLocation = await locationService.createLocation(locationDto);
+                const newLocation =
+                    await locationService.createLocation(locationDto);
 
                 return HttpResponseBuilder.buildOK(res, newLocation);
             }),
@@ -81,7 +82,8 @@ export const createLocationModule = createModuleFactory({
             '/:id',
             createHandler(async (req, res) => {
                 const locationId = req.params.id;
-                const location = await locationService.getLocationById(locationId);
+                const location =
+                    await locationService.getLocationById(locationId);
 
                 return HttpResponseBuilder.buildOK(res, location);
             }),
@@ -113,7 +115,10 @@ export const createLocationModule = createModuleFactory({
                     type: req.body.type,
                 };
 
-                const updatedLocation = await locationService.updateLocation(locationId, updateDto);
+                const updatedLocation = await locationService.updateLocation(
+                    locationId,
+                    updateDto,
+                );
 
                 return HttpResponseBuilder.buildOK(res, updatedLocation);
             }),

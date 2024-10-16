@@ -11,9 +11,12 @@ const updateUserSchema = Joi.object({
     email: Joi.string().email().optional().messages({
         'string.email': 'Email must be a valid email address.',
     }),
-    role: Joi.string().valid('Employer', 'JobSeeker', 'Admin').optional().messages({
-        'any.only': 'Role must be one of [Employer, JobSeeker, Admin].',
-    }),
+    role: Joi.string()
+        .valid('Employer', 'JobSeeker', 'Admin')
+        .optional()
+        .messages({
+            'any.only': 'Role must be one of [Employer, JobSeeker, Admin].',
+        }),
     profilePicture: Joi.string().uri().optional().messages({
         'string.uri': 'Profile picture must be a valid URL.',
     }),
@@ -23,9 +26,11 @@ const updateUserSchema = Joi.object({
     locationId: Joi.string().optional().messages({
         'string.empty': 'Location ID cannot be empty.',
     }),
-}).min(1).messages({
-    'object.min': 'At least one field must be provided for update.',
-});
+})
+    .min(1)
+    .messages({
+        'object.min': 'At least one field must be provided for update.',
+    });
 
 // Middleware xác thực dữ liệu cho DTO cập nhật User
 export const updateUserDtoValidator = (
@@ -33,7 +38,9 @@ export const updateUserDtoValidator = (
     res: Response,
     next: NextFunction,
 ) => {
-    const { error } = updateUserSchema.validate(req.body, { abortEarly: false });
+    const { error } = updateUserSchema.validate(req.body, {
+        abortEarly: false,
+    });
 
     if (error) {
         const errorMessages = error.details.map(detail => detail.message);

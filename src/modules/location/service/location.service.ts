@@ -1,5 +1,8 @@
 import { LocationModel } from '../../../system/model/localtion.schema';
-import { LocationNotFoundException, DuplicateLocationException } from '../service';
+import {
+    LocationNotFoundException,
+    DuplicateLocationException,
+} from '../service';
 
 class LocationService {
     // Tạo một địa điểm mới

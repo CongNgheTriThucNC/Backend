@@ -3,10 +3,7 @@ import { PropertyFactory } from '../../system/swagger/core/property.factory';
 import { createModuleFactory } from '../../system/factories/module.factory';
 import { createHandler } from '../../system/factories';
 import { HttpResponseBuilder } from '../../system/builders/http-response.builder';
-import {
-    updateUserDtoValidator,
-    userService,
-} from './services';
+import { updateUserDtoValidator, userService } from './services';
 
 const MODULE_NAME = 'User';
 export const createUserModule = createModuleFactory({
@@ -122,7 +119,10 @@ export const createUserModule = createModuleFactory({
                     role: req.body.role,
                 };
 
-                const updatedUser = await userService.updateUser(userId, updateDto);
+                const updatedUser = await userService.updateUser(
+                    userId,
+                    updateDto,
+                );
 
                 return HttpResponseBuilder.buildOK(res, updatedUser);
             }),

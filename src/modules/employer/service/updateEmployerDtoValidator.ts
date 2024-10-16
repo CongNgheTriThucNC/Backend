@@ -21,9 +21,11 @@ const updateEmployerSchema = Joi.object({
     email: Joi.string().email().optional().messages({
         'string.email': 'Email must be a valid email address.',
     }),
-}).min(1).messages({
-    'object.min': 'At least one field must be provided for update.',
-});
+})
+    .min(1)
+    .messages({
+        'object.min': 'At least one field must be provided for update.',
+    });
 
 // Middleware to validate the data for updating an employer
 export const updateEmployerDtoValidator = (
@@ -31,7 +33,9 @@ export const updateEmployerDtoValidator = (
     res: Response,
     next: NextFunction,
 ) => {
-    const { error } = updateEmployerSchema.validate(req.body, { abortEarly: false });
+    const { error } = updateEmployerSchema.validate(req.body, {
+        abortEarly: false,
+    });
 
     if (error) {
         const errorMessages = error.details.map(detail => detail.message);

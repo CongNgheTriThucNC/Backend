@@ -29,7 +29,9 @@ export const createEmployerDtoValidator = (
     res: Response,
     next: NextFunction,
 ) => {
-    const { error } = createEmployerSchema.validate(req.body, { abortEarly: false });
+    const { error } = createEmployerSchema.validate(req.body, {
+        abortEarly: false,
+    });
 
     if (error) {
         const errorMessages = error.details.map(detail => detail.message);

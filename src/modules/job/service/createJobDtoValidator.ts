@@ -23,13 +23,21 @@ const createJobSchema = Joi.object({
     salary: Joi.number().required().messages({
         'number.base': 'Salary must be a number.',
     }),
-    status: Joi.string().valid('Active', 'Closed').optional().default('Active').messages({
-        'any.only': 'Status must be either "Active" or "Closed".',
-    }),
+    status: Joi.string()
+        .valid('Active', 'Closed')
+        .optional()
+        .default('Active')
+        .messages({
+            'any.only': 'Status must be either "Active" or "Closed".',
+        }),
 });
 
 // Middleware to validate the data for creating a job
-export const createJobDtoValidator = (req: Request, res: Response, next: NextFunction) => {
+export const createJobDtoValidator = (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
     const { error } = createJobSchema.validate(req.body, { abortEarly: false });
 
     if (error) {

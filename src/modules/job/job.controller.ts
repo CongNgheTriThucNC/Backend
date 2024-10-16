@@ -14,7 +14,7 @@ const MODULE_NAME = 'Job';
 export const createJobModule = createModuleFactory({
     path: '/jobs',
     name: MODULE_NAME,
-    bundler: (router) => {
+    bundler: router => {
         swaggerBuilder.addTag(MODULE_NAME);
 
         // Define Job DTO model
@@ -24,11 +24,23 @@ export const createJobModule = createModuleFactory({
             properties: {
                 title: PropertyFactory.createProperty({ type: 'string' }),
                 description: PropertyFactory.createProperty({ type: 'string' }),
-                locationIds: PropertyFactory.createProperty({ type: 'array', model: 'ObjectId' }),
-                employerId: PropertyFactory.createProperty({ type: 'string', format: 'ObjectId' }),
-                jobTypeId: PropertyFactory.createProperty({ type: 'string', format: 'ObjectId' }),
+                locationIds: PropertyFactory.createProperty({
+                    type: 'array',
+                    model: 'ObjectId',
+                }),
+                employerId: PropertyFactory.createProperty({
+                    type: 'string',
+                    format: 'ObjectId',
+                }),
+                jobTypeId: PropertyFactory.createProperty({
+                    type: 'string',
+                    format: 'ObjectId',
+                }),
                 salary: PropertyFactory.createProperty({ type: 'number' }),
-                status: PropertyFactory.createProperty({ type: 'string', enum: ['Active', 'Closed'] }),
+                status: PropertyFactory.createProperty({
+                    type: 'string',
+                    enum: ['Active', 'Closed'],
+                }),
             },
         });
 

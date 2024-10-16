@@ -3,7 +3,6 @@
 // import { logger } from '../logging/logger';
 // import { HttpResponseBuilder } from '../builders/http-response.builder';
 
-
 // const publicRoutes = [
 //     '/api/auth/login',
 //     '/api/auth/register',

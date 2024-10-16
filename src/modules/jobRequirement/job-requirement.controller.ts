@@ -14,7 +14,7 @@ const MODULE_NAME = 'JobRequirement';
 export const createJobRequirementModule = createModuleFactory({
     path: '/job-requirements',
     name: MODULE_NAME,
-    bundler: (router) => {
+    bundler: router => {
         swaggerBuilder.addTag(MODULE_NAME);
 
         // Define Job Requirement DTO model
@@ -22,15 +22,23 @@ export const createJobRequirementModule = createModuleFactory({
         swaggerBuilder.addModel({
             name: JOB_REQUIREMENT_DTO_NAME,
             properties: {
-                jobId: PropertyFactory.createProperty({ type: 'string', format: 'ObjectId' }),
-                requirementDescription: PropertyFactory.createProperty({ type: 'string' }),
+                jobId: PropertyFactory.createProperty({
+                    type: 'string',
+                    format: 'ObjectId',
+                }),
+                requirementDescription: PropertyFactory.createProperty({
+                    type: 'string',
+                }),
                 requirementType: PropertyFactory.createProperty({
-                    type: 'enum', 
-                    model: { Skill: 'Skill', Education: 'Education', Experience: '  ' } 
+                    type: 'enum',
+                    model: {
+                        Skill: 'Skill',
+                        Education: 'Education',
+                        Experience: '  ',
+                    },
                 }),
             },
         });
-        
 
         // Define GET /job-requirements route (get all job requirements)
         swaggerBuilder.addRoute({
@@ -64,7 +72,10 @@ export const createJobRequirementModule = createModuleFactory({
         router.get(
             '/',
             createHandler(async (req, res) => {
-                const jobRequirements = await jobRequirementService.getAllJobRequirements(req.query);
+                const jobRequirements =
+                    await jobRequirementService.getAllJobRequirements(
+                        req.query,
+                    );
                 return HttpResponseBuilder.buildOK(res, jobRequirements);
             }),
         );
@@ -88,7 +99,10 @@ export const createJobRequirementModule = createModuleFactory({
             '/:id',
             createHandler(async (req, res) => {
                 const jobRequirementId = req.params.id;
-                const jobRequirement = await jobRequirementService.getJobRequirementById(jobRequirementId);
+                const jobRequirement =
+                    await jobRequirementService.getJobRequirementById(
+                        jobRequirementId,
+                    );
                 return HttpResponseBuilder.buildOK(res, jobRequirement);
             }),
         );
@@ -110,7 +124,8 @@ export const createJobRequirementModule = createModuleFactory({
                     requirementType: req.body.requirementType,
                 };
 
-                const newJobRequirement = await jobRequirementService.createJobRequirement(createDto);
+                const newJobRequirement =
+                    await jobRequirementService.createJobRequirement(createDto);
                 return HttpResponseBuilder.buildCreated(res, newJobRequirement);
             }),
         );
@@ -142,7 +157,11 @@ export const createJobRequirementModule = createModuleFactory({
                     requirementType: req.body.requirementType,
                 };
 
-                const updatedJobRequirement = await jobRequirementService.updateJobRequirement(jobRequirementId, updateDto);
+                const updatedJobRequirement =
+                    await jobRequirementService.updateJobRequirement(
+                        jobRequirementId,
+                        updateDto,
+                    );
                 return HttpResponseBuilder.buildOK(res, updatedJobRequirement);
             }),
         );
@@ -166,7 +185,9 @@ export const createJobRequirementModule = createModuleFactory({
             '/:id',
             createHandler(async (req, res) => {
                 const jobRequirementId = req.params.id;
-                await jobRequirementService.deleteJobRequirement(jobRequirementId);
+                await jobRequirementService.deleteJobRequirement(
+                    jobRequirementId,
+                );
                 return HttpResponseBuilder.buildNoContent(res);
             }),
         );

@@ -38,11 +38,14 @@ class JobRequirementService {
     }
 
     // Update an existing job requirement by ID
-    async updateJobRequirement(requirementId: string, updateDto: Partial<IJobRequirement>) {
+    async updateJobRequirement(
+        requirementId: string,
+        updateDto: Partial<IJobRequirement>,
+    ) {
         const updatedRequirement = await JobRequirementModel.findByIdAndUpdate(
             requirementId,
             { $set: updateDto },
-            { new: true, runValidators: true }
+            { new: true, runValidators: true },
         ).lean();
 
         if (!updatedRequirement) {
@@ -54,7 +57,8 @@ class JobRequirementService {
 
     // Soft delete a job requirement by ID
     async deleteJobRequirement(requirementId: string) {
-        const deletedRequirement = await JobRequirementModel.deleteById(requirementId);
+        const deletedRequirement =
+            await JobRequirementModel.deleteById(requirementId);
         if (!deletedRequirement) {
             throw new JobRequirementNotFoundException();
         }

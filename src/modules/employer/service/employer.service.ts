@@ -33,7 +33,9 @@ class EmployerService {
     async createEmployer(createDto: Partial<IEmployer>) {
         // Check if the email already exists
         if (createDto.email) {
-            const existingEmployer = await EmployerModel.findOne({ email: createDto.email }).lean();
+            const existingEmployer = await EmployerModel.findOne({
+                email: createDto.email,
+            }).lean();
             if (existingEmployer) {
                 throw new EmailAlreadyInUseException();
             }
@@ -47,7 +49,10 @@ class EmployerService {
     async updateEmployer(employerId: string, updateDto: Partial<IEmployer>) {
         // If the email is being updated, check if it already exists for another employer
         if (updateDto.email) {
-            const existingEmployer = await EmployerModel.findOne({ email: updateDto.email, _id: { $ne: employerId } }).lean();
+            const existingEmployer = await EmployerModel.findOne({
+                email: updateDto.email,
+                _id: { $ne: employerId },
+            }).lean();
             if (existingEmployer) {
                 throw new EmailAlreadyInUseException();
             }
@@ -56,7 +61,7 @@ class EmployerService {
         const updatedEmployer = await EmployerModel.findByIdAndUpdate(
             employerId,
             { $set: updateDto },
-            { new: true, runValidators: true }
+            { new: true, runValidators: true },
         ).lean();
 
         if (!updatedEmployer) {
