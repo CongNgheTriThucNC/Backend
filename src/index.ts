@@ -17,13 +17,9 @@ app.get('/', (req, res) => {
     });
 });
 // render origin and railway origin
+const originAllowCors = ['https://backend-production-b4ad.up.railway.app', 'http://localhost:3000'];
 (async () => {
-    app.use(
-        cors({
-            origin: '*',
-            optionsSuccessStatus: 200,
-        }),
-    );
+    app.use(cors({ origin: originAllowCors }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     // app.use(authenticationRouter);
