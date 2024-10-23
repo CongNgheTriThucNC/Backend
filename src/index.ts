@@ -19,12 +19,17 @@ app.get('/', (req, res) => {
 // render origin and railway origin
 const originAllowCors = ['https://backend-production-b4ad.up.railway.app', 'http://localhost:3000'];
 (async () => {
-    app.use(
-        cors({
-            origin:originAllowCors,
-            optionsSuccessStatus: 200,
-        }),
-    );
+    app.use(cors({
+        origin: (origin, callback) => {
+           if (originAllowCors.includes(origin) || !origin) {
+              callback(null, true);  // Allow the request
+           } else {
+              callback(new Error('Not allowed by CORS'));  // Reject the request
+           }
+        },
+        credentials: true,  // Allow credentials if needed
+        optionsSuccessStatus: 200,  // For older browsers
+     }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     // app.use(authenticationRouter);
