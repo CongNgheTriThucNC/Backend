@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
         Swagger: 'http://localhost:3000/docs',
     });
 });
-
+// render origin and railway origin
 (async () => {
     app.use(
         cors({
