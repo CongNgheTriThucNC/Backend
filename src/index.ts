@@ -7,6 +7,9 @@ import { connectDatabase } from './system/database/database.connector';
 import { notFoundHandler } from './system/exceptions/error-handler/';
 import { swaggerBuilder } from './system/swagger';
 import { logger } from './system/logging/logger';
+import { initDriver } from './system/database/neo4j';
+import dotenv from 'dotenv';
+
 // import { authenticationRouter } from './system/middleware/';
 
 const app = express();
@@ -17,19 +20,25 @@ app.get('/', (req, res) => {
     });
 });
 // render origin and railway origin
-const originAllowCors = ['https://backend-production-b4ad.up.railway.app', 'http://localhost:3000'];
+const originAllowCors = [
+    'https://backend-production-b4ad.up.railway.app',
+    'http://localhost:3000',
+];
 (async () => {
-    app.use(cors({
-        origin: (origin, callback) => {
-           if (originAllowCors.includes(origin) || !origin) {
-              callback(null, true);  // Allow the request
-           } else {
-              callback(new Error('Not allowed by CORS'));  // Reject the request
-           }
-        },
-        credentials: true,  // Allow credentials if needed
-        optionsSuccessStatus: 200,  // For older browsers
-     }));
+    dotenv.config();
+    app.use(
+        cors({
+            origin: (origin, callback) => {
+                if (originAllowCors.includes(origin) || !origin) {
+                    callback(null, true); // Allow the request
+                } else {
+                    callback(new Error('Not allowed by CORS')); // Reject the request
+                }
+            },
+            credentials: true, // Allow credentials if needed
+            optionsSuccessStatus: 200, // For older browsers
+        }),
+    );
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     // app.use(authenticationRouter);
@@ -39,6 +48,11 @@ const originAllowCors = ['https://backend-production-b4ad.up.railway.app', 'http
     app.use(notFoundHandler);
     app.use(errorHandler);
     await connectDatabase();
+    await initDriver(
+        process.env.NEO4J_URI,
+        process.env.NEO4J_USERNAME,
+        process.env.NEO4J_PASSWORD,
+    );
 })();
 
 app.listen(port, () => {
