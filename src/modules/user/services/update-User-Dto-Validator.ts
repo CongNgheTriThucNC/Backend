@@ -5,7 +5,7 @@ import Joi from 'joi';
 
 // Định nghĩa cấu trúc của DTO khi cập nhật User
 const updateUserSchema = Joi.object({
-    name: Joi.string().optional().messages({
+    username: Joi.string().optional().messages({
         'string.empty': 'Name cannot be empty.',
     }),
     email: Joi.string().email().optional().messages({

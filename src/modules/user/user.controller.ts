@@ -17,8 +17,9 @@ export const createUserModule = createModuleFactory({
         swaggerBuilder.addModel({
             name: USER_DTO_NAME,
             properties: {
-                name: PropertyFactory.createProperty({ type: 'string' }),
+                username: PropertyFactory.createProperty({ type: 'string' }),
                 email: PropertyFactory.createProperty({ type: 'string' }),
+                bio: PropertyFactory.createProperty({ type: 'string' }),
                 role: PropertyFactory.createProperty({ type: 'string' }),
             },
         });
@@ -114,9 +115,9 @@ export const createUserModule = createModuleFactory({
             createHandler(async (req, res) => {
                 const userId = req.params.id;
                 const updateDto = {
-                    name: req.body.name,
+                    username: req.body.username,
                     email: req.body.email,
-                    role: req.body.role,
+                    bio: req.body.bio,
                 };
 
                 const updatedUser = await userService.updateUser(

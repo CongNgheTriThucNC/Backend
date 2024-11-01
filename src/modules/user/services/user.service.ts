@@ -44,7 +44,8 @@ class UserService {
 
     // Cập nhật thông tin người dùng
     async updateUser(userId: string, updateDto: Partial<IUser>) {
-        // Nếu email được cập nhật, kiểm tra xem email đã được sử dụng chưa
+        try {
+                    // Nếu email được cập nhật, kiểm tra xem email đã được sử dụng chưa
         if (updateDto.email) {
             const existingUser = await UserModel.findOne({
                 email: updateDto.email,
@@ -64,8 +65,12 @@ class UserService {
         if (!updatedUser) {
             throw new UserNotFoundException();
         }
-
         return updatedUser;
+
+        } catch (error) {
+            throw error.message;
+        }
+
     }
 
     // Xóa người dùng theo ID
