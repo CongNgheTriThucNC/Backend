@@ -2,10 +2,12 @@
 
 import { omit } from 'lodash';
 import { CompanyNotFoundException } from './exceptions/company.exceptions';
-import { getDriver } from '../../../system/database/neo4j';
+import { getNeo4jDriver } from '../../../system/database/neo4j';
 import { logger } from './../../../system/logging/logger';
-import * as neo4j from 'neo4j-driver';
-import { convertNeo4jInteger } from '../../../utils/convert-neo4j-integer';
+import {
+    convertIntegerToNeo4jInteger,
+    convertNeo4jIntegerToInteger,
+} from '../../../utils/convert-integer-neo4j';
 import {
     CompanyFilterByParams,
     JobsByCompanyIdFilter,
@@ -14,7 +16,7 @@ import { CreateCompanyDto, UpdateCompanyDto } from '../dto/company.dto';
 
 class CompanyService {
     async getAllCompanies(filter: CompanyFilterByParams) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -26,16 +28,16 @@ class CompanyService {
                 `
                 MATCH (c:Company)
                 WHERE
-                ($CompanyAddress IS NULL OR c.CompanyAddress CONTAINS $CompanyAddress) AND
-                ($CompanySize IS NULL OR c.CompanySize = $CompanySize)
+                    ($CompanyAddress IS NULL OR toLower(c.CompanyAddress) CONTAINS toLower($CompanyAddress)) AND
+                    ($CompanySize IS NULL OR toLower(c.CompanySize) = toLower($CompanySize))
                 RETURN c
                 SKIP $skip LIMIT $limit
                 `,
                 {
                     CompanyAddress: filter.CompanyAddress || null,
                     CompanySize: filter.CompanySize || null,
-                    skip: neo4j.int(skip),
-                    limit: neo4j.int(limit),
+                    skip: convertIntegerToNeo4jInteger(skip),
+                    limit: convertIntegerToNeo4jInteger(limit),
                 },
             );
             const companies = detailResult.records.map(record => {
@@ -48,8 +50,8 @@ class CompanyService {
             const totalCountResult = await session.run(
                 `MATCH (c:Company)
                 WHERE
-                ($CompanyAddress IS NULL OR c.CompanyAddress CONTAINS $CompanyAddress) AND
-                ($CompanySize IS NULL OR c.CompanySize = $CompanySize)
+                    ($CompanyAddress IS NULL OR toLower(c.CompanyAddress) CONTAINS toLower($CompanyAddress)) AND
+                    ($CompanySize IS NULL OR toLower(c.CompanySize) = toLower($CompanySize))
                 RETURN count(c) AS totalCount
                 `,
                 {
@@ -85,7 +87,7 @@ class CompanyService {
     }
     // Get company details by ID
     async getCompanyById(companyId: string) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -95,7 +97,7 @@ class CompanyService {
                 RETURN c
                 `,
                 {
-                    CompanyId: neo4j.int(companyId),
+                    CompanyId: convertIntegerToNeo4jInteger(companyId),
                 },
             );
             if (result.records.length === 0) {
@@ -117,7 +119,7 @@ class CompanyService {
 
     // Get Jobs by CompanyId
     async getJobsByCompanyId(filter: JobsByCompanyIdFilter) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -132,9 +134,9 @@ class CompanyService {
                 SKIP $skip LIMIT $limit
                 `,
                 {
-                    CompanyId: neo4j.int(filter.CompanyId),
-                    skip: neo4j.int(skip),
-                    limit: neo4j.int(limit),
+                    CompanyId: convertIntegerToNeo4jInteger(filter.CompanyId),
+                    skip: convertIntegerToNeo4jInteger(skip),
+                    limit: convertIntegerToNeo4jInteger(limit),
                 },
             );
 
@@ -142,13 +144,13 @@ class CompanyService {
                 const jobProperties = record.get('j').properties;
                 const submissionDeadline = jobProperties.SubmissionDeadline
                     ? {
-                          year: convertNeo4jInteger(
+                          year: convertNeo4jIntegerToInteger(
                               jobProperties.SubmissionDeadline.year,
                           ),
-                          month: convertNeo4jInteger(
+                          month: convertNeo4jIntegerToInteger(
                               jobProperties.SubmissionDeadline.month,
                           ),
-                          day: convertNeo4jInteger(
+                          day: convertNeo4jIntegerToInteger(
                               jobProperties.SubmissionDeadline.day,
                           ),
                       }
@@ -157,12 +159,14 @@ class CompanyService {
                 return {
                     ...jobProperties,
                     SubmissionDeadline: submissionDeadline,
-                    JobID: convertNeo4jInteger(jobProperties.JobID),
-                    NumberCandidate: convertNeo4jInteger(
+                    JobID: convertNeo4jIntegerToInteger(jobProperties.JobID),
+                    NumberCandidate: convertNeo4jIntegerToInteger(
                         jobProperties.NumberCandidate,
                     ),
                     ...companyProperties,
-                    CompanyID: convertNeo4jInteger(companyProperties.CompanyID),
+                    CompanyID: convertNeo4jIntegerToInteger(
+                        companyProperties.CompanyID,
+                    ),
                 };
             });
 
@@ -172,7 +176,7 @@ class CompanyService {
                 RETURN count(j) AS totalCount
                 `,
                 {
-                    companyId: neo4j.int(filter.CompanyId),
+                    companyId: convertIntegerToNeo4jInteger(filter.CompanyId),
                 },
             );
 
@@ -204,7 +208,7 @@ class CompanyService {
 
     // Create a new company
     async createCompany(createDto: CreateCompanyDto) {
-        // const driver = getDriver();
+        // const driver = getNeo4jDriver();
         // const session = driver.session();
         // try {
         //     const query = `
@@ -253,7 +257,7 @@ class CompanyService {
 
     // Update an existing company by ID
     async updateCompany(companyId: string, updateDto: UpdateCompanyDto) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -268,15 +272,17 @@ class CompanyService {
         `;
 
             const result = await session.run(query, {
-                companyId: neo4j.int(companyId),
+                companyId: convertIntegerToNeo4jInteger(companyId),
                 ...updateDto,
             });
 
             const updatedCompany = result.records[0].get('j').properties;
             return {
                 ...updatedCompany,
-                CompanyID: convertNeo4jInteger(updatedCompany.CompanyID),
-                NumberofCandidate: convertNeo4jInteger(
+                CompanyID: convertNeo4jIntegerToInteger(
+                    updatedCompany.CompanyID,
+                ),
+                NumberofCandidate: convertNeo4jIntegerToInteger(
                     updatedCompany.NumberofCandidate,
                 ),
             };
@@ -290,7 +296,7 @@ class CompanyService {
 
     // Soft delete a company by ID
     async deleteCompany(companyId: string) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -301,7 +307,7 @@ class CompanyService {
         `;
 
             const result = await session.run(query, {
-                companyId: neo4j.int(companyId),
+                companyId: convertIntegerToNeo4jInteger(companyId),
             });
             return result.records.length > 0;
         } catch (error) {

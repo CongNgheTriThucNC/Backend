@@ -3,60 +3,178 @@
 import { omit } from 'lodash';
 import { JobNotFoundException } from './exceptions/job.exceptions';
 import { JobModel, IJob } from '../../../system/model';
-import { getDriver } from '../../../system/database/neo4j';
+import { getNeo4jDriver } from '../../../system/database/neo4j';
 import { logger } from './../../../system/logging/logger';
-import * as neo4j from 'neo4j-driver';
-import { convertNeo4jInteger } from '../../../utils/convert-neo4j-integer';
-import { JobFilterByParams } from '../dto/jobFilter.dto';
+import {
+    convertIntegerToNeo4jInteger,
+    convertNeo4jIntegerToInteger,
+} from '../../../utils/convert-integer-neo4j';
+import { JobFilter } from '../dto/jobFilter.dto';
+import { getOpenAI } from '../../../system/llm/openai.connector';
+import {
+    convertParamsNumber,
+    convertParamsString,
+} from '../../../utils/convert-content-params';
+import fs from 'fs';
 
 class JobService {
     // Get a paginated list of all jobs
-    async getAllJobs(filter: JobFilterByParams) {
-        const driver = getDriver();
-        const session = driver.session();
+    async getAllJobs(filter: JobFilter) {
+        const neo4jDriver = getNeo4jDriver();
+        const neo4jSession = neo4jDriver.session();
+        const openaiClient = getOpenAI();
+        //  read file txt to get system prompt
+        const systemPrompt = fs.readFileSync(
+            'src/system/llm/system-prompt.txt',
+            'utf8',
+        );
 
         try {
             const page = filter.page || 1;
             const limit = filter.limit || 10;
             const skip = (page - 1) * limit;
 
-            const detailResult = await session.run(
+            let industry = '';
+            let jobType = '';
+            let location = '';
+            let experience = '';
+            let experienceFrom = undefined;
+            let experienceTo = undefined;
+            let salary = '';
+            let salaryFrom = undefined;
+            let salaryTo = undefined;
+            let education = '';
+            let careerLevel = '';
+            let companySizeFrom = undefined;
+            let companySizeTo = undefined;
+
+            if (filter.Query) {
+                const response = await openaiClient.chat.completions.create({
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        {
+                            role: 'user',
+                            content: filter.Query,
+                        },
+                    ],
+                    model: 'gpt-4o',
+                    temperature: 0.1,
+                    max_tokens: 4096,
+                    top_p: 0.1,
+                });
+                const content = response.choices[0].message.content;
+                logger.info('Content: ' + content);
+                // use regular expression to extract the job filter
+                const regex =
+                    /^Industry: (.*?), JobType: (.*?), Location: (.*?), ExperienceFrom: (.*?), ExperienceTo: (.*?), SalaryFrom: (.*?), SalaryTo: (.*?), Education: (.*?), CareerLevel: (.*?), CompanySizeFrom: (.*?), CompanySizeTo: (.*?)$/;
+
+                // flags to regex from multiple lines
+                const match = content.match(regex);
+                if (match) {
+                    industry = convertParamsString(match[1]);
+                    jobType = convertParamsString(match[2]);
+                    location = convertParamsString(match[3]);
+                    experienceFrom = convertParamsNumber(match[4]);
+                    experienceTo = convertParamsNumber(match[5]);
+                    salaryFrom = convertParamsNumber(match[6]);
+                    salaryTo = convertParamsNumber(match[7]);
+                    education = convertParamsString(match[8]);
+                    careerLevel = convertParamsString(match[9]);
+                    companySizeFrom = convertParamsNumber(match[10]);
+                    companySizeTo = convertParamsNumber(match[11]);
+                }
+                logger.info('Industry: ' + industry);
+                logger.info('Job Type: ' + jobType);
+                logger.info('Location: ' + location);
+                logger.info('ExperienceFrom: ' + experienceFrom);
+                logger.info('ExperienceTo: ' + experienceTo);
+                logger.info('SalaryFrom: ' + salaryFrom);
+                logger.info('SalaryTo: ' + salaryTo);
+                logger.info('Education: ' + education);
+                logger.info('CareerLevel: ' + careerLevel);
+                logger.info('CompanySizeFrom: ' + companySizeFrom);
+                logger.info('CompanySizeTo: ' + companySizeTo);
+            }
+
+            if (filter.Industry) {
+                industry = filter.Industry;
+            }
+            if (filter.JobType) {
+                jobType = filter.JobType;
+            }
+            if (filter.Location) {
+                location = filter.Location;
+            }
+            if (filter.Experience) {
+                experience = filter.Experience;
+                experienceFrom = null;
+                experienceTo = null;
+            }
+            if (filter.Salary) {
+                salary = filter.Salary;
+                salaryFrom = null;
+                salaryTo = null;
+            }
+            if (filter.Education) {
+                education = filter.Education;
+            }
+            if (filter.CareerLevel) {
+                careerLevel = filter.CareerLevel;
+            }
+
+            const detailResult = await neo4jSession.run(
                 `
-            MATCH (j:Job)-[:FROM]->(c:Company)
-            WHERE
-              ($Industry IS NULL OR j.Industry = $Industry) AND
-              ($JobType IS NULL OR j.JobType = $JobType) AND
-              ($Location IS NULL OR j.JobAddress CONTAINS $Location) AND
-              ($Experience IS NULL OR j.YearsofExperience = $Experience) AND
-              ($Salary IS NULL OR j.Salary = $Salary) AND
-              ($Education IS NULL OR j.JobRequirements CONTAINS $Education) AND
-              ($CareerLevel IS NULL OR j.CareerLevel = $CareerLevel)
-            RETURN j, c
-            SKIP $skip LIMIT $limit
-          `,
+                    MATCH (j:Job)-[:FROM]->(c:Company)
+                    WHERE
+                        ($Industry IS NULL OR toLower(j.Industry) CONTAINS toLower($Industry)) AND
+                        ($JobType IS NULL OR toLower(j.JobType) CONTAINS toLower($JobType)) AND
+                        ($Location IS NULL OR toLower(j.JobAddress) CONTAINS toLower($Location)) AND
+                        (
+                            ($Experience IS NULL AND (($ExperienceFrom IS NULL OR j.ExperienceTo >= $ExperienceFrom) AND ($ExperienceTo IS NULL OR j.ExperienceFrom <= $ExperienceTo)))
+                            OR toLower(j.YearsofExperience) = toLower($Experience)
+                        ) AND
+                        (
+                            ($Salary IS NULL AND (($SalaryFrom IS NULL OR j.SalaryTo >= $SalaryFrom) AND ($SalaryTo IS NULL OR j.SalaryFrom <= $SalaryTo)))
+                            OR toLower(j.Salary) = toLower($Salary)
+                        ) AND
+                        (
+                            ($CompanySizeFrom IS NULL OR c.CompanySizeTo >= $CompanySizeFrom)
+                            AND ($CompanySizeTo IS NULL OR c.CompanySizeFrom <= $CompanySizeTo)
+                        ) AND
+                        ($Education IS NULL OR toLower(j.JobRequirements) CONTAINS toLower($Education)) AND
+                        ($CareerLevel IS NULL OR toLower(j.CareerLevel) CONTAINS toLower($CareerLevel))
+                    RETURN j, c
+                    SKIP $skip LIMIT $limit
+                `,
                 {
-                    Industry: filter.Industry || null,
-                    JobType: filter.JobType || null,
-                    Location: filter.Location || null,
-                    Experience: filter.Experience || null,
-                    Salary: filter.Salary || null,
-                    Education: filter.Education || null,
-                    CareerLevel: filter.CareerLevel || null,
-                    skip: neo4j.int(skip),
-                    limit: neo4j.int(limit),
+                    Industry: industry || null,
+                    JobType: jobType || null,
+                    Location: location || null,
+                    Experience: experience || null,
+                    Salary: salary || null,
+                    Education: education || null,
+                    CareerLevel: careerLevel || null,
+                    ExperienceFrom: experienceFrom || null,
+                    ExperienceTo: experienceTo || null,
+                    SalaryFrom: salaryFrom || null,
+                    SalaryTo: salaryTo || null,
+                    CompanySizeFrom: companySizeFrom || null,
+                    CompanySizeTo: companySizeTo || null,
+                    skip: convertIntegerToNeo4jInteger(skip),
+                    limit: convertIntegerToNeo4jInteger(limit),
                 },
             );
             const jobs = detailResult.records.map(record => {
                 const jobProperties = record.get('j').properties;
                 const submissionDeadline = jobProperties.SubmissionDeadline
                     ? {
-                          year: convertNeo4jInteger(
+                          year: convertNeo4jIntegerToInteger(
                               jobProperties.SubmissionDeadline.year,
                           ),
-                          month: convertNeo4jInteger(
+                          month: convertNeo4jIntegerToInteger(
                               jobProperties.SubmissionDeadline.month,
                           ),
-                          day: convertNeo4jInteger(
+                          day: convertNeo4jIntegerToInteger(
                               jobProperties.SubmissionDeadline.day,
                           ),
                       }
@@ -65,37 +183,55 @@ class JobService {
                 return {
                     ...jobProperties,
                     SubmissionDeadline: submissionDeadline,
-                    JobID: convertNeo4jInteger(jobProperties.JobID),
-                    NumberCandidate: convertNeo4jInteger(
+                    JobID: convertNeo4jIntegerToInteger(jobProperties.JobID),
+                    NumberCandidate: convertNeo4jIntegerToInteger(
                         jobProperties.NumberCandidate,
                     ),
                     ...companyProperties,
-                    CompanyID: convertNeo4jInteger(companyProperties.CompanyID),
+                    CompanyID: convertNeo4jIntegerToInteger(
+                        companyProperties.CompanyID,
+                    ),
                 };
             });
 
             // Query to get total count of jobs matching the filters
-            const totalCountResult = await session.run(
+            const totalCountResult = await neo4jSession.run(
                 `
-            MATCH (j:Job)
-            WHERE
-              ($Industry IS NULL OR j.Industry = $Industry) AND
-              ($JobType IS NULL OR j.JobType = $JobType) AND
-              ($Location IS NULL OR j.JobAddress CONTAINS $Location) AND
-              ($Experience IS NULL OR j.YearsofExperience = $Experience) AND
-              ($Salary IS NULL OR j.Salary = $Salary) AND
-              ($Education IS NULL OR j.JobRequirements CONTAINS $Education) AND
-              ($CareerLevel IS NULL OR j.CareerLevel = $CareerLevel)
-            RETURN count(j) AS totalCount
-          `,
+                    MATCH (j:Job)-[:FROM]->(c:Company)
+                    WHERE
+                        ($Industry IS NULL OR toLower(j.Industry) CONTAINS toLower($Industry)) AND
+                        ($JobType IS NULL OR toLower(j.JobType) CONTAINS toLower($JobType)) AND
+                        ($Location IS NULL OR toLower(j.JobAddress) CONTAINS toLower($Location)) AND
+                        (
+                            ($Experience IS NULL AND (($ExperienceFrom IS NULL OR j.ExperienceTo >= $ExperienceFrom) AND ($ExperienceTo IS NULL OR j.ExperienceFrom <= $ExperienceTo)))
+                            OR toLower(j.YearsofExperience) = toLower($Experience)
+                        ) AND
+                        (
+                            ($Salary IS NULL AND (($SalaryFrom IS NULL OR j.Salary >= $SalaryFrom) AND ($SalaryTo IS NULL OR j.Salary <= $SalaryTo)))
+                            OR toLower(j.Salary) = toLower($Salary)
+                        ) AND
+                        (
+                            ($CompanySizeFrom IS NULL OR c.CompanySize >= $CompanySizeFrom)
+                            AND ($CompanySizeTo IS NULL OR c.CompanySize <= $CompanySizeTo)
+                        ) AND
+                        ($Education IS NULL OR toLower(j.JobRequirements) CONTAINS toLower($Education)) AND
+                        ($CareerLevel IS NULL OR toLower(j.CareerLevel) CONTAINS toLower($CareerLevel))
+                    RETURN count(j) AS totalCount
+                `,
                 {
-                    Industry: filter.Industry || null,
-                    JobType: filter.JobType || null,
-                    Location: filter.Location || null,
-                    Experience: filter.Experience || null,
-                    Salary: filter.Salary || null,
-                    Education: filter.Education || null,
-                    CareerLevel: filter.CareerLevel || null,
+                    Industry: industry || null,
+                    JobType: jobType || null,
+                    Location: location || null,
+                    Experience: experience || null,
+                    Salary: salary || null,
+                    Education: education || null,
+                    CareerLevel: careerLevel || null,
+                    ExperienceFrom: experienceFrom || null,
+                    ExperienceTo: experienceTo || null,
+                    SalaryFrom: salaryFrom || null,
+                    SalaryTo: salaryTo || null,
+                    CompanySizeFrom: companySizeFrom || null,
+                    CompanySizeTo: companySizeTo || null,
                 },
             );
 
@@ -121,12 +257,12 @@ class JobService {
             logger.error('Error fetching jobs from Neo4j:' + error);
             throw error;
         } finally {
-            await session.close();
+            await neo4jSession.close();
         }
     }
     // Get job details by ID
     async getJobById(jobId: string) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -136,7 +272,7 @@ class JobService {
                 RETURN j, c
                 `,
                 {
-                    jobId: neo4j.int(jobId),
+                    jobId: convertIntegerToNeo4jInteger(jobId),
                 },
             );
             if (result.records.length === 0) {
@@ -147,17 +283,25 @@ class JobService {
             const company = result.records[0].get('c').properties;
             const submissionDeadline = job.SubmissionDeadline
                 ? {
-                      year: convertNeo4jInteger(job.SubmissionDeadline.year),
-                      month: convertNeo4jInteger(job.SubmissionDeadline.month),
-                      day: convertNeo4jInteger(job.SubmissionDeadline.day),
+                      year: convertNeo4jIntegerToInteger(
+                          job.SubmissionDeadline.year,
+                      ),
+                      month: convertNeo4jIntegerToInteger(
+                          job.SubmissionDeadline.month,
+                      ),
+                      day: convertNeo4jIntegerToInteger(
+                          job.SubmissionDeadline.day,
+                      ),
                   }
                 : null;
 
             return {
                 ...job,
                 SubmissionDeadline: submissionDeadline,
-                JobID: convertNeo4jInteger(job.JobID),
-                NumberCandidate: convertNeo4jInteger(job.NumberCandidate),
+                JobID: convertNeo4jIntegerToInteger(job.JobID),
+                NumberCandidate: convertNeo4jIntegerToInteger(
+                    job.NumberCandidate,
+                ),
                 ...company,
             };
         } catch (error) {
@@ -170,7 +314,7 @@ class JobService {
 
     // Create a new job
     async createJob(createDto: Partial<IJob>) {
-        // const driver = getDriver();
+        // const driver = getNeo4jDriver();
         // const session = driver.session();
         // try {
         //     const query = `
@@ -219,7 +363,7 @@ class JobService {
 
     // Update an existing job by ID
     async updateJob(jobId: string, updateDto: Partial<IJob>) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -234,15 +378,15 @@ class JobService {
         `;
 
             const result = await session.run(query, {
-                jobId: neo4j.int(jobId),
+                jobId: convertIntegerToNeo4jInteger(jobId),
                 ...updateDto,
             });
 
             const updatedJob = result.records[0].get('j').properties;
             return {
                 ...updatedJob,
-                JobID: convertNeo4jInteger(updatedJob.JobID),
-                NumberofCandidate: convertNeo4jInteger(
+                JobID: convertNeo4jIntegerToInteger(updatedJob.JobID),
+                NumberofCandidate: convertNeo4jIntegerToInteger(
                     updatedJob.NumberofCandidate,
                 ),
             };
@@ -256,7 +400,7 @@ class JobService {
 
     // Soft delete a job by ID
     async deleteJob(jobId: string) {
-        const driver = getDriver();
+        const driver = getNeo4jDriver();
         const session = driver.session();
 
         try {
@@ -267,7 +411,7 @@ class JobService {
         `;
 
             const result = await session.run(query, {
-                jobId: neo4j.int(jobId),
+                jobId: convertIntegerToNeo4jInteger(jobId),
             });
             return result.records.length > 0;
         } catch (error) {

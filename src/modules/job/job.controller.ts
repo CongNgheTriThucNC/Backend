@@ -91,6 +91,7 @@ export const createJobModule = createModuleFactory({
                     Salary: req.query.Salary,
                     Education: req.query.Education,
                     CareerLevel: req.query.CareerLevel,
+                    Query: req.query.Query,
                     page: Number(req.query.page),
                     limit: Number(req.query.limit),
                 };
