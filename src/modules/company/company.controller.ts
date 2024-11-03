@@ -83,20 +83,15 @@ export const createCompanyModule = createModuleFactory({
         router.get(
             '/',
             createHandler(async (req, res) => {
-                const CompanyFilter = {
-                    Industry: req.query.Industry,
-                    CompanyType: req.query.CompanyType,
-                    Location: req.query.Location,
-                    Experience: req.query.Experience,
-                    Salary: req.query.Salary,
-                    Education: req.query.Education,
-                    CareerLevel: req.query.CareerLevel,
+                const companyFilter = {
+                    CompanyAddress: req.query.CompanyAddress,
+                    CompanySize: req.query.CompanySize,
                     page: Number(req.query.page),
                     limit: Number(req.query.limit),
                 };
-                const companys =
-                    await companyService.getAllCompanies(CompanyFilter);
-                return HttpResponseBuilder.buildOK(res, companys);
+                const companies =
+                    await companyService.getAllCompanies(companyFilter);
+                return HttpResponseBuilder.buildOK(res, companies);
             }),
         );
 
@@ -124,6 +119,36 @@ export const createCompanyModule = createModuleFactory({
             }),
         );
 
+        // Define GET /companies/:id/jobs route (get jobs companyID)
+        swaggerBuilder.addRoute({
+            route: '/companies/{id}/jobs',
+            tags: [MODULE_NAME],
+            method: 'get',
+            params: [
+                PropertyFactory.createParam({
+                    name: 'id',
+                    paramsIn: 'path',
+                    type: 'string',
+                    description: 'Company ID',
+                    required: true,
+                }),
+            ],
+        });
+        router.get(
+            '/:id/jobs',
+            createHandler(async (req, res) => {
+                const jobsByCompanyIdFilter = {
+                    CompanyId: req.params.id,
+                    page: Number(req.query.page),
+                    limit: Number(req.query.limit),
+                };
+                const jobs = await companyService.getJobsByCompanyId(
+                    jobsByCompanyIdFilter,
+                );
+                return HttpResponseBuilder.buildOK(res, jobs);
+            }),
+        );
+
         // Define POST /companys route (create a new company)
         swaggerBuilder.addRoute({
             route: '/companies',
@@ -133,22 +158,21 @@ export const createCompanyModule = createModuleFactory({
         });
         router.post(
             '/',
-            createCompanyDtoValidator,
-            createHandler(async (req, res) => {
-                const createDto = {
-                    title: req.body.title,
-                    description: req.body.description,
-                    locationIds: req.body.locationIds,
-                    employerId: req.body.employerId,
-                    companyTypeId: req.body.companyTypeId,
-                    salary: req.body.salary,
-                    status: req.body.status,
-                };
+            // createCompanyDtoValidator,
+            // createHandler(async (req, res) => {
+            //     const createDto = {
+            //         title: req.body.title,
+            //         description: req.body.description,
+            //         locationIds: req.body.locationIds,
+            //         employerId: req.body.employerId,
+            //         companyTypeId: req.body.companyTypeId,
+            //         salary: req.body.salary,
+            //         status: req.body.status,
+            //     };
 
-                const newCompany =
-                    await companyService.createCompany(createDto);
-                return HttpResponseBuilder.buildCreated(res, newCompany);
-            }),
+            //     const newCompany = await companyService.createCompany(createDto);
+            //     return HttpResponseBuilder.buildCreated(res, newCompany);
+            // }),
         );
 
         // Define PATCH /companies/:id route (update company by ID)

@@ -6,7 +6,10 @@ import { getDriver } from '../../../system/database/neo4j';
 import { logger } from './../../../system/logging/logger';
 import * as neo4j from 'neo4j-driver';
 import { convertNeo4jInteger } from '../../../utils/convert-neo4j-integer';
-import { CompanyFilterByParams } from '../dto/companyFilter.dto';
+import {
+    CompanyFilterByParams,
+    JobsByCompanyIdFilter,
+} from '../dto/companyFilter.dto';
 import { CreateCompanyDto, UpdateCompanyDto } from '../dto/company.dto';
 
 class CompanyService {
@@ -86,14 +89,15 @@ class CompanyService {
         const session = driver.session();
 
         try {
-            const query = `
-            MATCH (c:Company {CompanyID: $companyId})
-            RETURN c
-        `;
-
-            const result = await session.run(query, {
-                companyId: neo4j.int(companyId),
-            });
+            const result = await session.run(
+                `
+                MATCH (c:Company {CompanyID: $CompanyId})
+                RETURN c
+                `,
+                {
+                    CompanyId: neo4j.int(companyId),
+                },
+            );
             if (result.records.length === 0) {
                 return null;
             }
@@ -102,6 +106,93 @@ class CompanyService {
 
             return {
                 ...company,
+            };
+        } catch (error) {
+            logger.error('Error fetching company by ID from Neo4j: ' + error);
+            throw error;
+        } finally {
+            await session.close();
+        }
+    }
+
+    // Get Jobs by CompanyId
+    async getJobsByCompanyId(filter: JobsByCompanyIdFilter) {
+        const driver = getDriver();
+        const session = driver.session();
+
+        try {
+            const page = filter.page || 1;
+            const limit = filter.limit || 10;
+            const skip = (page - 1) * limit;
+
+            const detailResult = await session.run(
+                `
+                MATCH (c:Company {CompanyID: $CompanyId})<-[:FROM]-(j:Job)
+                RETURN j, c
+                SKIP $skip LIMIT $limit
+                `,
+                {
+                    CompanyId: neo4j.int(filter.CompanyId),
+                    skip: neo4j.int(skip),
+                    limit: neo4j.int(limit),
+                },
+            );
+
+            const jobs = detailResult.records.map(record => {
+                const jobProperties = record.get('j').properties;
+                const submissionDeadline = jobProperties.SubmissionDeadline
+                    ? {
+                          year: convertNeo4jInteger(
+                              jobProperties.SubmissionDeadline.year,
+                          ),
+                          month: convertNeo4jInteger(
+                              jobProperties.SubmissionDeadline.month,
+                          ),
+                          day: convertNeo4jInteger(
+                              jobProperties.SubmissionDeadline.day,
+                          ),
+                      }
+                    : null;
+                const companyProperties = record.get('c').properties;
+                return {
+                    ...jobProperties,
+                    SubmissionDeadline: submissionDeadline,
+                    JobID: convertNeo4jInteger(jobProperties.JobID),
+                    NumberCandidate: convertNeo4jInteger(
+                        jobProperties.NumberCandidate,
+                    ),
+                    ...companyProperties,
+                    CompanyID: convertNeo4jInteger(companyProperties.CompanyID),
+                };
+            });
+
+            const totalCountResult = await session.run(
+                `
+                MATCH (c:Company {CompanyID: $companyId})<-[:FROM]-(j:Job)
+                RETURN count(j) AS totalCount
+                `,
+                {
+                    companyId: neo4j.int(filter.CompanyId),
+                },
+            );
+
+            const totalDocs = totalCountResult.records[0]
+                .get('totalCount')
+                .toNumber();
+            const totalPages = Math.ceil(totalDocs / filter.limit);
+            const hasNextPage = filter.page < totalPages;
+            const hasPrevPage = filter.page > 1;
+
+            return {
+                docs: jobs,
+                totalDocs,
+                limit,
+                totalPages,
+                page,
+                hasPrevPage,
+                hasNextPage,
+                prevPage: hasPrevPage ? page - 1 : null,
+                nextPage: hasNextPage ? page + 1 : null,
             };
         } catch (error) {
             logger.error('Error fetching company by ID from Neo4j: ' + error);
