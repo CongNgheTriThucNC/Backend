@@ -1,3 +1,3 @@
-export * from './createJobDtoValidator';
+export * from '../validators/createJobDtoValidator';
 export * from './job.service';
-export * from './updateJobDtoValidator';
+export * from '../validators/updateJobDtoValidator';
