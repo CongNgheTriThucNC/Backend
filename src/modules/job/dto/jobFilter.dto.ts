@@ -1,4 +1,4 @@
-export interface JobFilterByParams {
+export interface JobFilter {
     Industry?: string;
     JobType?: string;
     Location?: string;
@@ -6,11 +6,7 @@ export interface JobFilterByParams {
     Salary?: string;
     Education?: string;
     CareerLevel?: string;
-    page?: number;
-    limit?: number;
-}
-export interface JobFilterByQuery {
-    query?: string;
+    Query?: string;
     page?: number;
     limit?: number;
 }

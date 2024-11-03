@@ -7,8 +7,9 @@ import { connectDatabase } from './system/database/database.connector';
 import { notFoundHandler } from './system/exceptions/error-handler/';
 import { swaggerBuilder } from './system/swagger';
 import { logger } from './system/logging/logger';
-import { initDriver } from './system/database/neo4j';
+import { initNeo4jDriver as initNeo4jDriver } from './system/database/neo4j';
 import dotenv from 'dotenv';
+import { initOpenAI } from './system/llm/openai.connector';
 
 // import { authenticationRouter } from './system/middleware/';
 
@@ -48,11 +49,12 @@ const originAllowCors = [
     app.use(notFoundHandler);
     app.use(errorHandler);
     await connectDatabase();
-    await initDriver(
+    await initNeo4jDriver(
         process.env.NEO4J_URI,
         process.env.NEO4J_USERNAME,
         process.env.NEO4J_PASSWORD,
     );
+    initOpenAI(process.env.OPENAI_BASE_URL, process.env.OPENAI_API_KEY);
 })();
 
 app.listen(port, () => {

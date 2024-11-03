@@ -2,7 +2,7 @@ import { logger } from './../logging/logger';
 import * as neo4j from 'neo4j-driver';
 let driver: neo4j.Driver | null = null;
 
-export async function initDriver(
+export async function initNeo4jDriver(
     uri: string,
     username: string,
     password: string,
@@ -20,11 +20,11 @@ export async function initDriver(
     return driver;
 }
 
-export function getDriver(): neo4j.Driver | null {
+export function getNeo4jDriver(): neo4j.Driver | null {
     return driver;
 }
 
-export async function closeDriver(): Promise<void> {
+export async function closeNeo4jDriver(): Promise<void> {
     if (driver) {
         await driver.close();
         driver = null;
