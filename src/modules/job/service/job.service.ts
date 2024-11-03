@@ -130,14 +130,15 @@ class JobService {
         const session = driver.session();
 
         try {
-            const query = `
-            MATCH (j:Job {JobID: $jobId})
-            RETURN j
-        `;
-
-            const result = await session.run(query, {
-                jobId: neo4j.int(jobId),
-            });
+            const result = await session.run(
+                `
+                MATCH (j:Job {JobID: $jobId})
+                RETURN j
+                `,
+                {
+                    jobId: neo4j.int(jobId),
+                },
+            );
             if (result.records.length === 0) {
                 return null;
             }
@@ -155,7 +156,7 @@ class JobService {
                 ...job,
                 SubmissionDeadline: submissionDeadline,
                 JobID: convertNeo4jInteger(job.JobID),
-                NumberofCandidate: convertNeo4jInteger(job.NumberofCandidate),
+                NumberCandidate: convertNeo4jInteger(job.NumberCandidate),
             };
         } catch (error) {
             logger.error('Error fetching job by ID from Neo4j: ' + error);
