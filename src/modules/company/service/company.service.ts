@@ -44,7 +44,9 @@ class CompanyService {
                 const properties = record.get('c').properties;
                 return {
                     ...properties,
-                    CompanyID: convertNeo4jInteger(properties.CompanyID),
+                    CompanyID: convertNeo4jIntegerToInteger(
+                        properties.CompanyID,
+                    ),
                 };
             });
 
@@ -109,7 +111,7 @@ class CompanyService {
 
             return {
                 ...company,
-                CompanyID: convertNeo4jInteger(company.CompanyID),
+                CompanyID: convertNeo4jIntegerToInteger(company.CompanyID),
             };
         } catch (error) {
             logger.error('Error fetching company by ID from Neo4j: ' + error);
