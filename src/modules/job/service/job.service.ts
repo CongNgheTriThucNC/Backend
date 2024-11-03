@@ -159,6 +159,7 @@ class JobService {
                 JobID: convertNeo4jInteger(job.JobID),
                 NumberCandidate: convertNeo4jInteger(job.NumberCandidate),
                 ...company,
+                CompanyID: convertNeo4jInteger(company.CompanyID),
             };
         } catch (error) {
             logger.error('Error fetching job by ID from Neo4j: ' + error);
