@@ -1,0 +1,225 @@
+// src/modules/company/company.service.ts
+
+import { omit } from 'lodash';
+import { CompanyNotFoundException } from './exceptions/company.exceptions';
+import { getDriver } from '../../../system/database/neo4j';
+import { logger } from './../../../system/logging/logger';
+import * as neo4j from 'neo4j-driver';
+import { convertNeo4jInteger } from '../../../utils/convert-neo4j-integer';
+import { CompanyFilterByParams } from '../dto/companyFilter.dto';
+import { CreateCompanyDto, UpdateCompanyDto } from '../dto/company.dto';
+
+class CompanyService {
+    async getAllCompanies(filter: CompanyFilterByParams) {
+        const driver = getDriver();
+        const session = driver.session();
+
+        try {
+            const page = filter.page || 1;
+            const limit = filter.limit || 10;
+            const skip = (page - 1) * limit;
+
+            const detailResult = await session.run(
+                `
+                MATCH (c:Company)
+                WHERE
+                ($CompanyAddress IS NULL OR c.CompanyAddress CONTAINS $CompanyAddress) AND
+                ($CompanySize IS NULL OR c.CompanySize = $CompanySize)
+                RETURN c
+                SKIP $skip LIMIT $limit
+                `,
+                {
+                    CompanyAddress: filter.CompanyAddress || null,
+                    CompanySize: filter.CompanySize || null,
+                    skip: neo4j.int(skip),
+                    limit: neo4j.int(limit),
+                },
+            );
+            const companies = detailResult.records.map(record => {
+                const properties = record.get('c').properties;
+                return {
+                    ...properties,
+                };
+            });
+
+            const totalCountResult = await session.run(
+                `MATCH (c:Company)
+                WHERE
+                ($CompanyAddress IS NULL OR c.CompanyAddress CONTAINS $CompanyAddress) AND
+                ($CompanySize IS NULL OR c.CompanySize = $CompanySize)
+                RETURN count(c) AS totalCount
+                `,
+                {
+                    CompanyAddress: filter.CompanyAddress || null,
+                    CompanySize: filter.CompanySize || null,
+                },
+            );
+
+            const totalDocs = totalCountResult.records[0]
+                .get('totalCount')
+                .toNumber();
+            const totalPages = Math.ceil(totalDocs / limit);
+            const hasNextPage = page < totalPages;
+            const hasPrevPage = page > 1;
+
+            return {
+                docs: companies,
+                totalDocs,
+                limit,
+                totalPages,
+                page,
+                hasPrevPage,
+                hasNextPage,
+                prevPage: hasPrevPage ? page - 1 : null,
+                nextPage: hasNextPage ? page + 1 : null,
+            };
+        } catch (error) {
+            logger.error('Error fetching companies from Neo4j:' + error);
+            throw error;
+        } finally {
+            await session.close();
+        }
+    }
+    // Get company details by ID
+    async getCompanyById(companyId: string) {
+        const driver = getDriver();
+        const session = driver.session();
+
+        try {
+            const query = `
+            MATCH (c:Company {CompanyID: $companyId})
+            RETURN c
+        `;
+
+            const result = await session.run(query, {
+                companyId: neo4j.int(companyId),
+            });
+            if (result.records.length === 0) {
+                return null;
+            }
+
+            const company = result.records[0].get('c').properties;
+
+            return {
+                ...company,
+            };
+        } catch (error) {
+            logger.error('Error fetching company by ID from Neo4j: ' + error);
+            throw error;
+        } finally {
+            await session.close();
+        }
+    }
+
+    // Create a new company
+    async createCompany(createDto: CreateCompanyDto) {
+        // const driver = getDriver();
+        // const session = driver.session();
+        // try {
+        //     const query = `
+        //     CREATE (j:Company {
+        //         CompanyID: $CompanyID,
+        //         Title: $Title,
+        //         Industry: $Industry,
+        //         CompanyType: $CompanyType,
+        //         CompanyAddress: $CompanyAddress,
+        //         YearsofExperience: $YearsofExperience,
+        //         Salary: $Salary,
+        //         CompanyRequirements: $CompanyRequirements,
+        //         CareerLevel: $CareerLevel,
+        //         SubmissionDeadline: $SubmissionDeadline,
+        //         NumberofCandidate: $NumberofCandidate
+        //     })
+        //     RETURN j
+        // `;
+        //     const result = await session.run(query, {
+        //         CompanyID: neo4j.int(createDto.CompanyID),
+        //         Title: createDto.Title,
+        //         Industry: createDto.Industry,
+        //         CompanyType: createDto.CompanyType,
+        //         CompanyAddress: createDto.CompanyAddress,
+        //         YearsofExperience: createDto.YearsofExperience,
+        //         Salary: createDto.Salary,
+        //         CompanyRequirements: createDto.CompanyRequirements,
+        //         CareerLevel: createDto.CareerLevel,
+        //         SubmissionDeadline: createDto.SubmissionDeadline,
+        //         NumberofCandidate: neo4j.int(createDto.NumberofCandidate || 0),
+        //     });
+        //     const company = result.records[0].get('j').properties;
+        //     return {
+        //         ...company,
+        //         CompanyID: convertNeo4jInteger(company.CompanyID),
+        //         NumberofCandidate: convertNeo4jInteger(company.NumberofCandidate),
+        //     };
+        // } catch (error) {
+        //     logger.error('Error creating company in Neo4j: ' + error);
+        //     throw error;
+        // } finally {
+        //     await session.close();
+        // }
+        return {};
+    }
+
+    // Update an existing company by ID
+    async updateCompany(companyId: string, updateDto: UpdateCompanyDto) {
+        const driver = getDriver();
+        const session = driver.session();
+
+        try {
+            const setFields = Object.keys(updateDto)
+                .map(key => `j.${key} = $${key}`)
+                .join(', ');
+
+            const query = `
+            MATCH (j:Company {CompanyID: $companyId})
+            SET ${setFields}
+            RETURN j
+        `;
+
+            const result = await session.run(query, {
+                companyId: neo4j.int(companyId),
+                ...updateDto,
+            });
+
+            const updatedCompany = result.records[0].get('j').properties;
+            return {
+                ...updatedCompany,
+                CompanyID: convertNeo4jInteger(updatedCompany.CompanyID),
+                NumberofCandidate: convertNeo4jInteger(
+                    updatedCompany.NumberofCandidate,
+                ),
+            };
+        } catch (error) {
+            logger.error('Error updating company in Neo4j: ' + error);
+            throw error;
+        } finally {
+            await session.close();
+        }
+    }
+
+    // Soft delete a company by ID
+    async deleteCompany(companyId: string) {
+        const driver = getDriver();
+        const session = driver.session();
+
+        try {
+            const query = `
+            MATCH (j:Company {CompanyID: $companyId})
+            SET j.deleted = true
+            RETURN j
+        `;
+
+            const result = await session.run(query, {
+                companyId: neo4j.int(companyId),
+            });
+            return result.records.length > 0;
+        } catch (error) {
+            logger.error('Error soft deleting company in Neo4j: ' + error);
+            throw error;
+        } finally {
+            await session.close();
+        }
+    }
+}
+
+export const companyService = new CompanyService();
