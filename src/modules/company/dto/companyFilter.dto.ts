@@ -4,3 +4,8 @@ export interface CompanyFilterByParams {
     page?: number;
     limit?: number;
 }
+export interface JobsByCompanyIdFilter {
+    CompanyId: string;
+    page?: number;
+    limit?: number;
+}

@@ -83,15 +83,15 @@ export const createCompanyModule = createModuleFactory({
         router.get(
             '/',
             createHandler(async (req, res) => {
-                const CompanyFilter = {
+                const companyFilter = {
                     CompanyAddress: req.query.CompanyAddress,
                     CompanySize: req.query.CompanySize,
                     page: Number(req.query.page),
                     limit: Number(req.query.limit),
                 };
-                const companys =
-                    await companyService.getAllCompanies(CompanyFilter);
-                return HttpResponseBuilder.buildOK(res, companys);
+                const companies =
+                    await companyService.getAllCompanies(companyFilter);
+                return HttpResponseBuilder.buildOK(res, companies);
             }),
         );
 
@@ -116,6 +116,36 @@ export const createCompanyModule = createModuleFactory({
                 const companyId = req.params.id;
                 const company = await companyService.getCompanyById(companyId);
                 return HttpResponseBuilder.buildOK(res, company);
+            }),
+        );
+
+        // Define GET /companies/:id/jobs route (get jobs companyID)
+        swaggerBuilder.addRoute({
+            route: '/companies/{id}/jobs',
+            tags: [MODULE_NAME],
+            method: 'get',
+            params: [
+                PropertyFactory.createParam({
+                    name: 'id',
+                    paramsIn: 'path',
+                    type: 'string',
+                    description: 'Company ID',
+                    required: true,
+                }),
+            ],
+        });
+        router.get(
+            '/:id/jobs',
+            createHandler(async (req, res) => {
+                const jobsByCompanyIdFilter = {
+                    CompanyId: req.params.id,
+                    page: Number(req.query.page),
+                    limit: Number(req.query.limit),
+                };
+                const jobs = await companyService.getJobsByCompanyId(
+                    jobsByCompanyIdFilter,
+                );
+                return HttpResponseBuilder.buildOK(res, jobs);
             }),
         );
 

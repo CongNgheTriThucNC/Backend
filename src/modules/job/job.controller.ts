@@ -83,7 +83,7 @@ export const createJobModule = createModuleFactory({
         router.get(
             '/',
             createHandler(async (req, res) => {
-                const JobFilter = {
+                const jobFilter = {
                     Industry: req.query.Industry,
                     JobType: req.query.JobType,
                     Location: req.query.Location,
@@ -94,7 +94,7 @@ export const createJobModule = createModuleFactory({
                     page: Number(req.query.page),
                     limit: Number(req.query.limit),
                 };
-                const jobs = await jobService.getAllJobs(JobFilter);
+                const jobs = await jobService.getAllJobs(jobFilter);
                 return HttpResponseBuilder.buildOK(res, jobs);
             }),
         );
