@@ -84,13 +84,8 @@ export const createCompanyModule = createModuleFactory({
             '/',
             createHandler(async (req, res) => {
                 const CompanyFilter = {
-                    Industry: req.query.Industry,
-                    CompanyType: req.query.CompanyType,
-                    Location: req.query.Location,
-                    Experience: req.query.Experience,
-                    Salary: req.query.Salary,
-                    Education: req.query.Education,
-                    CareerLevel: req.query.CareerLevel,
+                    CompanyAddress: req.query.CompanyAddress,
+                    CompanySize: req.query.CompanySize,
                     page: Number(req.query.page),
                     limit: Number(req.query.limit),
                 };
@@ -133,22 +128,21 @@ export const createCompanyModule = createModuleFactory({
         });
         router.post(
             '/',
-            createCompanyDtoValidator,
-            createHandler(async (req, res) => {
-                const createDto = {
-                    title: req.body.title,
-                    description: req.body.description,
-                    locationIds: req.body.locationIds,
-                    employerId: req.body.employerId,
-                    companyTypeId: req.body.companyTypeId,
-                    salary: req.body.salary,
-                    status: req.body.status,
-                };
+            // createCompanyDtoValidator,
+            // createHandler(async (req, res) => {
+            //     const createDto = {
+            //         title: req.body.title,
+            //         description: req.body.description,
+            //         locationIds: req.body.locationIds,
+            //         employerId: req.body.employerId,
+            //         companyTypeId: req.body.companyTypeId,
+            //         salary: req.body.salary,
+            //         status: req.body.status,
+            //     };
 
-                const newCompany =
-                    await companyService.createCompany(createDto);
-                return HttpResponseBuilder.buildCreated(res, newCompany);
-            }),
+            //     const newCompany = await companyService.createCompany(createDto);
+            //     return HttpResponseBuilder.buildCreated(res, newCompany);
+            // }),
         );
 
         // Define PATCH /companies/:id route (update company by ID)
