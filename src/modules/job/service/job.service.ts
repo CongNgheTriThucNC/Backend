@@ -207,12 +207,12 @@ class JobService {
                             OR toLower(j.YearsofExperience) = toLower($Experience)
                         ) AND
                         (
-                            ($Salary IS NULL AND (($SalaryFrom IS NULL OR j.Salary >= $SalaryFrom) AND ($SalaryTo IS NULL OR j.Salary <= $SalaryTo)))
+                            ($Salary IS NULL AND (($SalaryFrom IS NULL OR j.SalaryTo >= $SalaryFrom) AND ($SalaryTo IS NULL OR j.SalaryFrom <= $SalaryTo)))
                             OR toLower(j.Salary) = toLower($Salary)
                         ) AND
                         (
-                            ($CompanySizeFrom IS NULL OR c.CompanySize >= $CompanySizeFrom)
-                            AND ($CompanySizeTo IS NULL OR c.CompanySize <= $CompanySizeTo)
+                            ($CompanySizeFrom IS NULL OR c.CompanySizeTo >= $CompanySizeFrom)
+                            AND ($CompanySizeTo IS NULL OR c.CompanySizeFrom <= $CompanySizeTo)
                         ) AND
                         ($Education IS NULL OR toLower(j.JobRequirements) CONTAINS toLower($Education)) AND
                         ($CareerLevel IS NULL OR toLower(j.CareerLevel) CONTAINS toLower($CareerLevel))

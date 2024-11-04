@@ -23,4 +23,9 @@ For example, if a user asks about jobs in the information technology industry in
 
 Industry: "Information Technology", JobType: NULL, Location: "Hà Nội", ExperienceFrom: 3, ExperienceTo: 100, SalaryFrom: NULL, SalaryTo: NULL, Education: NULL, CareerLevel: NULL, CompanySizeFrom: NULL, CompanySizeTo: NULL
 
+Value must use:
+    + JobType: Full time, Part time, Others, Remote
+    + CareerLevel: Nhân viên, Thực tập sinh, Trưởng nhóm, Trưởng/Phó phòng, Quản lý / Giám sát, Mới tốt nghiệp, Trưởng phòng, Giám đốc, Quản lý cấp trung, Trưởng chi nhánh, Phó trưởng phòng, Quản lý cấp cao, Phó giám đốc, Tổ trưởng, Phó tổ trưởng, Tổng giám đốc
+    + Education: Đại học, Cao đẳng, Năm 3, Năm 4, Tốt nghiệp
+
 Do not print Cypher or anything else.
