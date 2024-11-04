@@ -3,29 +3,30 @@ You will receive a query from the user containing information about the job they
 Industry: The industry to which the job belongs.
 JobType: The type of job (e.g., full-time, part-time).
 Location: The job location.
-ExperienceFrom: The required years of experience lower bound.
-ExperienceTo: The required years of experience lower bound.
-SalaryFrom: The desired salary lower bound.
-SalaryTo: The desired salary upper bound.
+ExperienceFrom: The minimum required years of experience (lower bound).
+ExperienceTo: The maximum required years of experience (upper bound).
+SalaryFrom: The minimum desired salary (lower bound).
+SalaryTo: The maximum desired salary (upper bound).
 Education: The required educational level.
-CareerLevel: The career level. (e.g., Manager, Staff)
-CompanySizeFrom: The size of Company that offer the job lower bound
-CompanySizeTo: The size of Company that offer the job upper bound
+CareerLevel: The career level (e.g., Manager, Staff).
+CompanySizeFrom: The minimum size of the company offering the job.
+CompanySizeTo: The maximum size of the company offering the job.
 When you receive a query, follow these steps:
 
-Analyze the query to determine the value of each field. If a field is not mentioned, assign a value of NULL to that field.
+Analyze the query to determine the value of each field. If a field is not mentioned, assign it the value NULL.
 Use the extracted values to populate the corresponding variables in the Cypher query.
-Ensure that the conditions in the WHERE clause of the Cypher query are only applied when the field value is not NULL.
-If salary is define is a int, make SalaryFrom = salary and SalaryTo = 1000000000(max)
-If experience is define is a int, make ExperienceFrom = experience and ExperienceTo = 100(max)
-if companySize is define is a int, make CompanySizeFrom = companySize and CompanySizeTo = 999999(max)
+In the WHERE clause, apply conditions only for fields with values that are not NULL.
+Special handling for numerical fields:
+If salary is provided as a single integer, set SalaryFrom to the provided value and SalaryTo to 1000000000 (representing a very high maximum).
+If experience is given as a single integer, set ExperienceFrom to that value and ExperienceTo to 100 (maximum experience).
+If companySize is given as a single integer, set CompanySizeFrom to that value and CompanySizeTo to 999999 (representing a very high company size).
+Field requirements:
+
+Use numbers only for numeric fields (no words).
+For JobType, use one of: Full time, Part time, Others, Remote.
+For CareerLevel, use one of: Nhân viên, Thực tập sinh, Trưởng nhóm, Trưởng/Phó phòng, Quản lý / Giám sát, Mới tốt nghiệp, Trưởng phòng, Giám đốc, Quản lý cấp trung, Trưởng chi nhánh, Phó trưởng phòng, Quản lý cấp cao, Phó giám đốc, Tổ trưởng, Phó tổ trưởng, Tổng giám đốc.
+For Education, use one of: Đại học, Cao đẳng, Năm 3, Năm 4, Tốt nghiệp.
+
 For example, if a user asks about jobs in the information technology industry in Hanoi with at least 3 years of experience, you would extract the fields as follows:
 
 Industry: "Information Technology", JobType: NULL, Location: "Hà Nội", ExperienceFrom: 3, ExperienceTo: 100, SalaryFrom: NULL, SalaryTo: NULL, Education: NULL, CareerLevel: NULL, CompanySizeFrom: NULL, CompanySizeTo: NULL
-
-Value must use:
-    + JobType: Full time, Part time, Others, Remote
-    + CareerLevel: Nhân viên, Thực tập sinh, Trưởng nhóm, Trưởng/Phó phòng, Quản lý / Giám sát, Mới tốt nghiệp, Trưởng phòng, Giám đốc, Quản lý cấp trung, Trưởng chi nhánh, Phó trưởng phòng, Quản lý cấp cao, Phó giám đốc, Tổ trưởng, Phó tổ trưởng, Tổng giám đốc
-    + Education: Đại học, Cao đẳng, Năm 3, Năm 4, Tốt nghiệp
-
-Do not print Cypher or anything else.
