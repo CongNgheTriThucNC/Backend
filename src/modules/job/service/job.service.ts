@@ -270,7 +270,8 @@ class JobService {
                 `
                 MATCH (j:Job {JobID: $jobId})-[:FROM]->(c:Company)
                 MATCH (j)-[:RELATED_TO]->(relatedJob:Job)
-                RETURN j, c, relatedJob
+                MATCH (relatedJob)-[:FROM]->(relatedCompany:Company)
+                RETURN j, c, relatedJob, relatedCompany
                 `,
                 {
                     jobId: convertIntegerToNeo4jInteger(jobId),
@@ -282,12 +283,21 @@ class JobService {
 
             const job = result.records[0].get('j').properties;
             const company = result.records[0].get('c').properties;
-            let RelatedJobs = result.records.map(
-                record => record.get('relatedJob').properties,
-            );
-            RelatedJobs = RelatedJobs.map(job => {
-                const jobId = convertNeo4jIntegerToInteger(job.JobID);
-                return { ...job, JobID: jobId };
+            const RelatedJobs = result.records.map(record => {
+                const relatedJob = record.get('relatedJob').properties;
+                const relatedCompany = record.get('relatedCompany').properties;
+
+                return {
+                    ...relatedJob,
+                    JobID: convertNeo4jIntegerToInteger(relatedJob.JobID),
+                    NumberCandidate: convertNeo4jIntegerToInteger(
+                        relatedJob.NumberCandidate,
+                    ),
+                    ...relatedCompany,
+                    CompanyID: convertNeo4jIntegerToInteger(
+                        relatedCompany.CompanyID,
+                    ),
+                };
             });
             const submissionDeadline = job.SubmissionDeadline
                 ? {
