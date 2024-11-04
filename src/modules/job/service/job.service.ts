@@ -268,8 +268,9 @@ class JobService {
         try {
             const result = await session.run(
                 `
-                MATCH (j:Job {JobID: $jobId})-[:FROM]->(c:Company)
-                RETURN j, c
+                MATCH (j:Job {JobID: 1})-[:FROM]->(c:Company)
+                MATCH (j)-[:RELATED_TO]->(relatedJob:Job)
+                RETURN j, c, relatedJob
                 `,
                 {
                     jobId: convertIntegerToNeo4jInteger(jobId),
@@ -281,6 +282,13 @@ class JobService {
 
             const job = result.records[0].get('j').properties;
             const company = result.records[0].get('c').properties;
+            let relatedJobs = result.records.map(
+                record => record.get('relatedJob').properties,
+            );
+            relatedJobs = relatedJobs.map(job => {
+                const jobId = convertNeo4jIntegerToInteger(job.JobID);
+                return { ...job, JobID: jobId };
+            });
             const submissionDeadline = job.SubmissionDeadline
                 ? {
                       year: convertNeo4jIntegerToInteger(
@@ -304,6 +312,7 @@ class JobService {
                 ),
                 ...company,
                 CompanyID: convertNeo4jIntegerToInteger(company.CompanyID),
+                relatedJobs,
             };
         } catch (error) {
             logger.error('Error fetching job by ID from Neo4j: ' + error);
