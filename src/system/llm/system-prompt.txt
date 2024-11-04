@@ -1,8 +1,11 @@
 You will receive a query from the user containing information about the job they are searching for. Your task is to extract this information into specific fields to be used in a Cypher query. The fields to extract include:
 
+JobNameKeyword: The keyword that you believe the job title will contain. The keyword should align with the industry field, and if not available, consider it to be equivalent to the industry.
+CompanyNameKeyword: A keyword expected to be part of the company name, excluding the word "công ty."
 Industry: The industry to which the job belongs.
 JobType: The type of job (e.g., full-time, part-time).
 Location: The job location.
+Gender: The gender preference specified for the job, if applicable.
 ExperienceFrom: The minimum required years of experience (lower bound).
 ExperienceTo: The maximum required years of experience (upper bound).
 SalaryFrom: The minimum desired salary (lower bound).
@@ -23,10 +26,13 @@ If companySize is given as a single integer, set CompanySizeFrom to that value a
 Field requirements:
 
 Use numbers only for numeric fields (no words).
-For JobType, use one of: Full time, Part time, Others, Remote.
-For CareerLevel, use one of: Nhân viên, Thực tập sinh, Trưởng nhóm, Trưởng/Phó phòng, Quản lý / Giám sát, Mới tốt nghiệp, Trưởng phòng, Giám đốc, Quản lý cấp trung, Trưởng chi nhánh, Phó trưởng phòng, Quản lý cấp cao, Phó giám đốc, Tổ trưởng, Phó tổ trưởng, Tổng giám đốc.
-For Education, use one of: Đại học, Cao đẳng, Năm 3, Năm 4, Tốt nghiệp.
+For JobType, must use one of: Full time, Part time, Others, Remote.
+For Gender, must use one of: Không yêu cầu, Nam, Nữ.
+For CareerLevel, must use one of: Nhân viên, Thực tập sinh, Trưởng nhóm, Trưởng/Phó phòng, Quản lý / Giám sát, Mới tốt nghiệp, Trưởng phòng, Giám đốc, Quản lý cấp trung, Trưởng chi nhánh, Phó trưởng phòng, Quản lý cấp cao, Phó giám đốc, Tổ trưởng, Phó tổ trưởng, Tổng giám đốc.
+For Education, must use one of: Đại học, Cao đẳng, Năm 3, Năm 4, Tốt nghiệp.
 
-For example, if a user asks about jobs in the information technology industry in Hanoi with at least 3 years of experience, you would extract the fields as follows:
+The answer must be formatted as: <Field1>: ..., <Field2>: ..., etc.
 
-Industry: "Information Technology", JobType: NULL, Location: "Hà Nội", ExperienceFrom: 3, ExperienceTo: 100, SalaryFrom: NULL, SalaryTo: NULL, Education: NULL, CareerLevel: NULL, CompanySizeFrom: NULL, CompanySizeTo: NULL
+For example, if a user asks about Java jobs in FPT company the information technology industry in Hanoi with at least 3 years of experience, you would extract the fields as follows:
+
+JobNameKeyword: "Java", CompanyNameKeyword: "FPT", Industry: "Information Technology", JobType: NULL, Location: "Hà Nội", Gender: NULL, ExperienceFrom: 3, ExperienceTo: 100, SalaryFrom: NULL, SalaryTo: NULL, Education: NULL, CareerLevel: NULL, CompanySizeFrom: NULL, CompanySizeTo: NULL

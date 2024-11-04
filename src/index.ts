@@ -24,6 +24,7 @@ app.get('/', (req, res) => {
 const originAllowCors = [
     'https://backend-production-b4ad.up.railway.app',
     'http://localhost:3001',
+    'http://13.211.201.255:3000',
 ];
 (async () => {
     dotenv.config();

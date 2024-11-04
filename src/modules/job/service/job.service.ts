@@ -34,9 +34,12 @@ class JobService {
             const limit = filter.limit || 10;
             const skip = (page - 1) * limit;
 
+            let jobNameKeyword = '';
+            let companyNameKeyword = '';
             let industry = '';
             let jobType = '';
             let location = '';
+            let gender = '';
             let experience = '';
             let experienceFrom = undefined;
             let experienceTo = undefined;
@@ -66,26 +69,32 @@ class JobService {
                 logger.info('Content: ' + content);
                 // use regular expression to extract the job filter
                 const regex =
-                    /^Industry: (.*?), JobType: (.*?), Location: (.*?), ExperienceFrom: (.*?), ExperienceTo: (.*?), SalaryFrom: (.*?), SalaryTo: (.*?), Education: (.*?), CareerLevel: (.*?), CompanySizeFrom: (.*?), CompanySizeTo: (.*?)$/;
+                    /^JobNameKeyword: (.*?), CompanyNameKeyword: (.*?), Industry: (.*?), JobType: (.*?), Location: (.*?), Gender: (.*?), ExperienceFrom: (.*?), ExperienceTo: (.*?), SalaryFrom: (.*?), SalaryTo: (.*?), Education: (.*?), CareerLevel: (.*?), CompanySizeFrom: (.*?), CompanySizeTo: (.*?)$/;
 
                 // flags to regex from multiple lines
                 const match = content.match(regex);
                 if (match) {
-                    industry = convertParamsString(match[1]);
-                    jobType = convertParamsString(match[2]);
-                    location = convertParamsString(match[3]);
-                    experienceFrom = convertParamsNumber(match[4]);
-                    experienceTo = convertParamsNumber(match[5]);
-                    salaryFrom = convertParamsNumber(match[6]);
-                    salaryTo = convertParamsNumber(match[7]);
-                    education = convertParamsString(match[8]);
-                    careerLevel = convertParamsString(match[9]);
-                    companySizeFrom = convertParamsNumber(match[10]);
-                    companySizeTo = convertParamsNumber(match[11]);
+                    jobNameKeyword = convertParamsString(match[1]);
+                    companyNameKeyword = convertParamsString(match[2]);
+                    industry = convertParamsString(match[3]);
+                    jobType = convertParamsString(match[4]);
+                    location = convertParamsString(match[5]);
+                    gender = convertParamsString(match[6]);
+                    experienceFrom = convertParamsNumber(match[7]);
+                    experienceTo = convertParamsNumber(match[8]);
+                    salaryFrom = convertParamsNumber(match[9]);
+                    salaryTo = convertParamsNumber(match[10]);
+                    education = convertParamsString(match[11]);
+                    careerLevel = convertParamsString(match[12]);
+                    companySizeFrom = convertParamsNumber(match[13]);
+                    companySizeTo = convertParamsNumber(match[14]);
                 }
+                logger.info('JobNameKeyword: ' + jobNameKeyword);
+                logger.info('CompanyNameKeyword: ' + companyNameKeyword);
                 logger.info('Industry: ' + industry);
                 logger.info('Job Type: ' + jobType);
                 logger.info('Location: ' + location);
+                logger.info('Gender: ' + gender);
                 logger.info('ExperienceFrom: ' + experienceFrom);
                 logger.info('ExperienceTo: ' + experienceTo);
                 logger.info('SalaryFrom: ' + salaryFrom);
@@ -126,9 +135,10 @@ class JobService {
                 `
                     MATCH (j:Job)-[:FROM]->(c:Company)
                     WHERE
-                        ($Industry IS NULL OR toLower(j.Industry) CONTAINS toLower($Industry)) AND
+                        (($JobNameKeyword IS NULL AND $CompanyNameKeyword IS NULL AND $Industry IS NULL) OR toLower(j.JobTitle) CONTAINS toLower($JobNameKeyword) OR toLower(c.CompanyName) CONTAINS toLower($CompanyNameKeyword) OR toLower(j.Industry) CONTAINS toLower($Industry))  AND
                         ($JobType IS NULL OR toLower(j.JobType) CONTAINS toLower($JobType)) AND
                         ($Location IS NULL OR toLower(j.JobAddress) CONTAINS toLower($Location)) AND
+                        ($Gender IS NULL OR j.Gender = "Không yêu cầu" OR toLower(j.Gender) = toLower($Gender)) AND
                         (
                             ($Experience IS NULL AND (($ExperienceFrom IS NULL OR j.ExperienceTo >= $ExperienceFrom) AND ($ExperienceTo IS NULL OR j.ExperienceFrom <= $ExperienceTo)))
                             OR toLower(j.YearsofExperience) = toLower($Experience)
@@ -147,9 +157,12 @@ class JobService {
                     SKIP $skip LIMIT $limit
                 `,
                 {
+                    JobNameKeyword: jobNameKeyword || null,
+                    CompanyNameKeyword: companyNameKeyword || null,
                     Industry: industry || null,
                     JobType: jobType || null,
                     Location: location || null,
+                    Gender: gender || null,
                     Experience: experience || null,
                     Salary: salary || null,
                     Education: education || null,
@@ -199,9 +212,10 @@ class JobService {
                 `
                     MATCH (j:Job)-[:FROM]->(c:Company)
                     WHERE
-                        ($Industry IS NULL OR toLower(j.Industry) CONTAINS toLower($Industry)) AND
+                        (($JobNameKeyword IS NULL AND $CompanyNameKeyword IS NULL AND $Industry IS NULL) OR toLower(j.JobTitle) CONTAINS toLower($JobNameKeyword) OR toLower(c.CompanyName) CONTAINS toLower($CompanyNameKeyword) OR toLower(j.Industry) CONTAINS toLower($Industry))  AND
                         ($JobType IS NULL OR toLower(j.JobType) CONTAINS toLower($JobType)) AND
                         ($Location IS NULL OR toLower(j.JobAddress) CONTAINS toLower($Location)) AND
+                        ($Gender IS NULL OR j.Gender = "Không yêu cầu" OR toLower(j.Gender) = toLower($Gender)) AND
                         (
                             ($Experience IS NULL AND (($ExperienceFrom IS NULL OR j.ExperienceTo >= $ExperienceFrom) AND ($ExperienceTo IS NULL OR j.ExperienceFrom <= $ExperienceTo)))
                             OR toLower(j.YearsofExperience) = toLower($Experience)
@@ -219,9 +233,12 @@ class JobService {
                     RETURN count(j) AS totalCount
                 `,
                 {
+                    JobNameKeyword: jobNameKeyword || null,
+                    CompanyNameKeyword: companyNameKeyword || null,
                     Industry: industry || null,
                     JobType: jobType || null,
                     Location: location || null,
+                    Gender: gender || null,
                     Experience: experience || null,
                     Salary: salary || null,
                     Education: education || null,
@@ -232,6 +249,8 @@ class JobService {
                     SalaryTo: salaryTo || null,
                     CompanySizeFrom: companySizeFrom || null,
                     CompanySizeTo: companySizeTo || null,
+                    skip: convertIntegerToNeo4jInteger(skip),
+                    limit: convertIntegerToNeo4jInteger(limit),
                 },
             );
 
@@ -255,7 +274,17 @@ class JobService {
             };
         } catch (error) {
             logger.error('Error fetching jobs from Neo4j:' + error);
-            throw error;
+            return {
+                docs: [],
+                totalDocs: 0,
+                limit: filter.limit || 10,
+                totalPages: 0,
+                page: filter.page || 1,
+                hasPrevPage: false,
+                hasNextPage: false,
+                prevPage: null,
+                nextPage: null,
+            };
         } finally {
             await neo4jSession.close();
         }
